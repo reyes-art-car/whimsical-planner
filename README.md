@@ -1,13 +1,11 @@
 # Enfoque (Flutter)
 
-Versión Flutter de Enfoque, tu app de apoyo para el TDAH: tareas troceables, foco con bosque,
-rutinas, hábitos, mascota, meditación, respiración, diario, viajes y retos. Funciona sin conexión
+Versión Flutter de Enfoque, tu app de apoyo para el TDAH: tareas troceables, foco y casa por habitaciones,
+rutinas, hábitos, mascota, meditación, respiración, diario y retos. Funciona sin conexión
 y guarda todo en el propio dispositivo.
 
-> **Aviso importante.** Este proyecto se ha escrito sin poder compilarlo (en el entorno donde se
-> generó no hay acceso a los servidores de Flutter). Se ha comprobado la sintaxis de todos los
-> archivos y se ha revisado a mano, pero la primera vez que lo compiles puede aparecer algún error
-> pequeño. Pégame el mensaje y lo corrijo.
+La versión actual cuenta con 14 pruebas automatizadas que comprueban los datos, la navegación,
+las tareas de casa y la confirmación al terminar el temporizador, incluida la vista móvil.
 
 ## Requisitos
 
@@ -60,10 +58,12 @@ puedes copiar tus datos y, en la otra versión, pegarlos y pulsar «Restaurar» 
 lib/
   main.dart        arranque, pestañas, tema, ciclo de vida
   state.dart       toda la lógica (puntos, mascota, temporizador, rutinas…)
-  data.dart        modelos, contenido (viajes, retos, meditaciones…) y migraciones
+  data.dart        modelos, contenido (retos, meditaciones…) y migraciones
   art.dart         dibujos SVG: mascota, 11 árboles y escena del bosque
   audio.dart       sonidos generados en código (campana, cuenco, ruido)
   widgets.dart     componentes comunes
+  guides.dart      explicaciones dentro de cada sección
+  house.dart       habitaciones y catálogo de tareas reales
   events.dart      mensajes, celebraciones y confeti
   screens/         una pantalla por archivo
 test/data_test.dart
@@ -73,11 +73,30 @@ test/data_test.dart
 
 - Los avisos (temporizador, recordatorios, rutinas) salen dentro de la app con sonido y vibración.
   **No hay notificaciones del sistema**: para algo importante, ponlo también como alarma del móvil.
-- El modo bosque marchita el árbol si la app pasa a segundo plano más de los segundos de margen
-  que elijas en Ajustes (la pantalla se mantiene encendida mientras crece).
+- Mi casa se ordena al confirmar tareas reales. Puedes salir de la app sin perder progreso.
 - La importación de copias es pegando el texto (no hay selector de archivos).
 
 ## Dependencias
 
 `shared_preferences` (guardado), `wakelock_plus` (pantalla encendida), `audioplayers` (sonidos),
 `flutter_svg` (dibujos). La fuente Lexend va incluida en `assets/fonts` (licencia OFL).
+
+## Navegación simplificada
+
+- **Hoy:** energía, siguiente tarea y captura de ideas.
+- **Foco:** temporizador y descansos para tus tareas, incluidas las de casa.
+- **Mi espacio:** tareas, rutinas y pausas; el resto se despliega en Más herramientas.
+- Cada sección incluye una explicación y un desplegable «Cómo se usa».
+- Viajes se ha retirado de las pantallas y de la lógica de uso. Su formato de datos antiguo
+  se conserva únicamente para poder leer y exportar copias previas sin perder información.
+
+## Mi casa
+
+Cocina, dormitorio, salón, baño y lavadero proponen acciones reales para ordenar, cocinar,
+limpiar, poner lavadoras, tender, doblar y planchar. Puedes añadirlas
+sin duplicados a Tareas, iniciar un bloque de foco o marcarlas después de hacerlas.
+La ilustración se ordena con las acciones confirmadas; el temporizador no las completa.
+Durante el bloque se muestra una vista previa animada del plano cenital de la habitación.
+Al terminar se pregunta si has hecho la tarea: solo la confirmación guarda el cambio.
+Cada habitación permite iniciar otra ronda sin borrar el historial. El progreso se guarda
+en las copias de seguridad. Los datos antiguos del bosque se conservan por compatibilidad.
