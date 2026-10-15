@@ -379,7 +379,7 @@ class _DiarioScreenState extends State<DiarioScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const H2('Tu porqué'),
-              const Muted('¿Para qué quieres organizarte mejor? Lo verás cada día en Hoy.',
+              const Muted('¿Para qué quieres organizarte mejor? Guarda aquí tu motivo para volver a él.',
                   small: true, padding: EdgeInsets.only(bottom: 10)),
               SaveField(
                 initial: app.d.why,

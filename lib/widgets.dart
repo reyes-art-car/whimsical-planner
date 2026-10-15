@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'art.dart';
 import 'data.dart';
+import 'guides.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'util.dart';
@@ -41,12 +42,10 @@ IconData iconFor(String key) {
       return Icons.grid_view_rounded;
     case 'mascota':
       return Icons.pets;
-    case 'bosque':
-      return Icons.park_outlined;
+    case 'casa':
+      return Icons.cottage_outlined;
     case 'meditar':
       return Icons.self_improvement;
-    case 'viajes':
-      return Icons.route;
     case 'retos':
       return Icons.flag_outlined;
     case 'diario':
@@ -131,7 +130,8 @@ class TreeView extends StatelessWidget {
   final double growth;
   final bool dead;
   final double size;
-  const TreeView(this.kind, {this.growth = 1, this.dead = false, this.size = 44, super.key});
+  const TreeView(this.kind,
+      {this.growth = 1, this.dead = false, this.size = 44, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +146,11 @@ class ForestScene extends StatelessWidget {
   final bool showPet;
   final String? hl;
   const ForestScene(this.list,
-      {this.height = 180, this.per = 8, this.showPet = true, this.hl, super.key});
+      {this.height = 180,
+      this.per = 8,
+      this.showPet = true,
+      this.hl,
+      super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +192,8 @@ class _PetViewState extends State<PetView> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400));
+    _c = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 2400));
     _c.repeat(reverse: true);
   }
 
@@ -221,7 +226,8 @@ class _PetViewState extends State<PetView> with SingleTickerProviderStateMixin {
       ),
     );
     if (widget.onTap == null) return child;
-    return GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onTap, child: child);
+    return GestureDetector(
+        behavior: HitTestBehavior.opaque, onTap: widget.onTap, child: child);
   }
 }
 
@@ -262,7 +268,7 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    final r = BorderRadius.circular(18);
+    final r = BorderRadius.circular(24);
     final box = Container(
       width: double.infinity,
       padding: padding,
@@ -270,8 +276,14 @@ class AppCard extends StatelessWidget {
         color: color ?? p.surface,
         borderRadius: r,
         border: Border.all(color: p.line),
+        boxShadow: [
+          BoxShadow(
+              color: p.text.withOpacity(0.04),
+              offset: const Offset(0, 4),
+              blurRadius: 12),
+        ],
       ),
-      child: child,
+      child: Material(type: MaterialType.transparency, child: child),
     );
     return Padding(
       padding: margin,
@@ -285,16 +297,61 @@ class AppCard extends StatelessWidget {
   }
 }
 
+class SectionGuide extends StatelessWidget {
+  final String title;
+  const SectionGuide(this.title, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final guide = sectionGuides[title];
+    if (guide == null) return const SizedBox.shrink();
+    final p = context.pal;
+    return AppCard(
+      color: p.tealSoft,
+      padding: EdgeInsets.zero,
+      child: ExpansionTile(
+        key: PageStorageKey('guide-$title'),
+        shape: const Border(),
+        collapsedShape: const Border(),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Icon(Icons.lightbulb_outline_rounded, color: p.teal),
+        title: Text(guide.first,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.4,
+              color: p.text,
+            )),
+        subtitle:
+            Text('Cómo se usa', style: TextStyle(color: p.teal, fontSize: 13)),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(guide[1],
+                style: TextStyle(
+                  color: p.text,
+                  fontSize: 14,
+                  height: 1.65,
+                )),
+          )
+        ],
+      ),
+    );
+  }
+}
+
 class H2 extends StatelessWidget {
   final String text;
   final EdgeInsets padding;
-  const H2(this.text, {this.padding = const EdgeInsets.only(bottom: 10), super.key});
+  const H2(this.text,
+      {this.padding = const EdgeInsets.only(bottom: 10), super.key});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: padding,
-      child: Text(text, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+      child: Text(text,
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
     );
   }
 }
@@ -305,7 +362,10 @@ class Muted extends StatelessWidget {
   final TextAlign? align;
   final EdgeInsets padding;
   const Muted(this.text,
-      {this.small = false, this.align, this.padding = EdgeInsets.zero, super.key});
+      {this.small = false,
+      this.align,
+      this.padding = EdgeInsets.zero,
+      super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -335,7 +395,10 @@ class FieldLabel extends StatelessWidget {
       padding: const EdgeInsets.only(top: 14, bottom: 6),
       child: Text(
         text,
-        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.pal.muted),
+        style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: context.pal.muted),
       ),
     );
   }
@@ -401,7 +464,7 @@ class Btn extends StatelessWidget {
         bg = p.surface2;
         fg = p.text;
     }
-    final r = BorderRadius.circular(14);
+    final r = BorderRadius.circular(24);
     final content = Row(
       mainAxisSize: block ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -433,7 +496,8 @@ class Btn extends StatelessWidget {
           onTap: onTap,
           child: Container(
             constraints: BoxConstraints(minHeight: small ? 40 : 50),
-            padding: EdgeInsets.symmetric(horizontal: small ? 14 : 18, vertical: 8),
+            padding:
+                EdgeInsets.symmetric(horizontal: small ? 14 : 18, vertical: 8),
             alignment: Alignment.center,
             child: content,
           ),
@@ -491,7 +555,8 @@ class ChipOpt extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: r,
-            border: Border.all(color: on ? p.accent : Colors.transparent, width: 1.5),
+            border: Border.all(
+                color: on ? p.accent : Colors.transparent, width: 1.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -516,11 +581,13 @@ class ChipOpt extends StatelessWidget {
 class ChipWrap extends StatelessWidget {
   final List<Widget> children;
   final WrapAlignment alignment;
-  const ChipWrap(this.children, {this.alignment = WrapAlignment.start, super.key});
+  const ChipWrap(this.children,
+      {this.alignment = WrapAlignment.start, super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(spacing: 8, runSpacing: 8, alignment: alignment, children: children);
+    return Wrap(
+        spacing: 8, runSpacing: 8, alignment: alignment, children: children);
   }
 }
 
@@ -541,7 +608,8 @@ class Swatch extends StatelessWidget {
         decoration: BoxDecoration(
           color: hexColor(hex),
           shape: BoxShape.circle,
-          border: Border.all(color: on ? p.accent : p.line, width: on ? 3 : 1.5),
+          border:
+              Border.all(color: on ? p.accent : p.line, width: on ? 3 : 1.5),
         ),
       ),
     );
@@ -562,9 +630,15 @@ class IcoBox extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: teal ? p.tealSoft : p.accentSoft,
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(18),
+          topRight: Radius.circular(14),
+          bottomLeft: Radius.circular(14),
+          bottomRight: Radius.circular(20),
+        ),
       ),
-      child: Icon(iconFor(icon), color: teal ? p.teal : p.accent, size: size * 0.5),
+      child: Icon(iconFor(icon),
+          color: teal ? p.teal : p.accent, size: size * 0.5),
     );
   }
 }
@@ -592,7 +666,9 @@ class CheckCircle extends StatelessWidget {
             color: on ? p.ok : Colors.transparent,
             border: Border.all(color: on ? p.ok : p.muted, width: 2),
           ),
-          child: on ? Icon(Icons.check, size: s * 0.62, color: Colors.white) : null,
+          child: on
+              ? Icon(Icons.check, size: s * 0.62, color: Colors.white)
+              : null,
         ),
       ),
     );
@@ -603,7 +679,8 @@ class ProgressBar extends StatelessWidget {
   final double value; // 0..1
   final bool teal;
   final bool over;
-  const ProgressBar(this.value, {this.teal = false, this.over = false, super.key});
+  const ProgressBar(this.value,
+      {this.teal = false, this.over = false, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -633,7 +710,8 @@ class Tag extends StatelessWidget {
     final p = context.pal;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-      decoration: BoxDecoration(color: p.surface2, borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(
+          color: p.surface2, borderRadius: BorderRadius.circular(10)),
       child: DefaultTextStyle(
         style: TextStyle(fontSize: 12.5, color: p.muted, fontFamily: 'Lexend'),
         child: child,
@@ -693,7 +771,9 @@ class StatsRow extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                Text(it[0], style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                Text(it[0],
+                    style: const TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 2),
                 Text(
                   it[1],
@@ -749,7 +829,8 @@ class MenuRow extends StatelessWidget {
                       Flexible(
                         child: Text(
                           title,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 15.5),
                         ),
                       ),
                       if (badge != null) ...[const SizedBox(width: 8), badge!],
@@ -760,7 +841,8 @@ class MenuRow extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         subtitle!,
-                        style: TextStyle(fontSize: 13, color: p.muted, height: 1.3),
+                        style: TextStyle(
+                            fontSize: 13, color: p.muted, height: 1.3),
                       ),
                     ),
                 ],
@@ -821,11 +903,13 @@ class DotsRow extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: i < filled ? p.ok : p.surface2,
-              border: Border.all(color: today == i ? p.accent : Colors.transparent, width: 2),
+              border: Border.all(
+                  color: today == i ? p.accent : Colors.transparent, width: 2),
             ),
             child: i < filled
                 ? const Icon(Icons.check, size: 18, color: Colors.white)
-                : Text('${i + 1}', style: TextStyle(fontSize: 13, color: p.muted)),
+                : Text('${i + 1}',
+                    style: TextStyle(fontSize: 13, color: p.muted)),
           ),
       ],
     );
@@ -853,11 +937,14 @@ class DotsMarks extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: on[i] ? p.ok : p.surface2,
-              border: Border.all(color: todayIdx == i ? p.accent : Colors.transparent, width: 2),
+              border: Border.all(
+                  color: todayIdx == i ? p.accent : Colors.transparent,
+                  width: 2),
             ),
             child: on[i]
                 ? const Icon(Icons.check, size: 18, color: Colors.white)
-                : Text('${i + 1}', style: TextStyle(fontSize: 13, color: p.muted)),
+                : Text('${i + 1}',
+                    style: TextStyle(fontSize: 13, color: p.muted)),
           ),
       ],
     );
@@ -869,12 +956,14 @@ class BarChart extends StatelessWidget {
   final List<String> labels;
   final int? maxValue;
   final bool showNumbers;
-  const BarChart(this.values, this.labels, {this.maxValue, this.showNumbers = true, super.key});
+  const BarChart(this.values, this.labels,
+      {this.maxValue, this.showNumbers = true, super.key});
 
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    final mx = maxValue ?? math.max(1, values.fold<int>(0, (a, b) => math.max(a, b)));
+    final mx =
+        maxValue ?? math.max(1, values.fold<int>(0, (a, b) => math.max(a, b)));
     return Column(
       children: [
         SizedBox(
@@ -947,7 +1036,8 @@ class PointsChip extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               onTap: onTap,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -955,7 +1045,8 @@ class PointsChip extends StatelessWidget {
                     const SizedBox(width: 5),
                     Text(
                       '${app.d.points}',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: p.accent),
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700, color: p.accent),
                     ),
                   ],
                 ),
@@ -1037,7 +1128,9 @@ class _SaveFieldState extends State<SaveField> {
   @override
   void didUpdateWidget(SaveField old) {
     super.didUpdateWidget(old);
-    if (!_f.hasFocus && widget.initial != _c.text && widget.initial != old.initial) {
+    if (!_f.hasFocus &&
+        widget.initial != _c.text &&
+        widget.initial != old.initial) {
       _c.text = widget.initial;
     }
   }
@@ -1129,7 +1222,8 @@ class NumStepper extends StatelessWidget {
   final int max;
   final void Function(int v) onChanged;
   final int step;
-  const NumStepper(this.value, this.min, this.max, this.onChanged, {this.step = 1, super.key});
+  const NumStepper(this.value, this.min, this.max, this.onChanged,
+      {this.step = 1, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -1143,14 +1237,16 @@ class NumStepper extends StatelessWidget {
             child: SizedBox(
               width: 44,
               height: 44,
-              child: Icon(i, color: f == null ? p.muted.withOpacity(0.4) : p.text),
+              child:
+                  Icon(i, color: f == null ? p.muted.withOpacity(0.4) : p.text),
             ),
           ),
         );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        b(Icons.remove, value > min ? () => onChanged(math.max(min, value - step)) : null),
+        b(Icons.remove,
+            value > min ? () => onChanged(math.max(min, value - step)) : null),
         SizedBox(
           width: 44,
           child: Text(
@@ -1159,7 +1255,8 @@ class NumStepper extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
         ),
-        b(Icons.add, value < max ? () => onChanged(math.min(max, value + step)) : null),
+        b(Icons.add,
+            value < max ? () => onChanged(math.min(max, value + step)) : null),
       ],
     );
   }
@@ -1170,7 +1267,8 @@ class SwitchRow extends StatelessWidget {
   final String? subtitle;
   final bool value;
   final void Function(bool v) onChanged;
-  const SwitchRow(this.title, this.value, this.onChanged, {this.subtitle, super.key});
+  const SwitchRow(this.title, this.value, this.onChanged,
+      {this.subtitle, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -1201,7 +1299,8 @@ class SwitchRow extends StatelessWidget {
 //  Ventanas
 // =====================================================================
 
-Future<T?> showSheet<T>(BuildContext context, Widget Function(BuildContext c) builder) {
+Future<T?> showSheet<T>(
+    BuildContext context, Widget Function(BuildContext c) builder) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
@@ -1227,7 +1326,9 @@ void askConfirm(BuildContext context, String msg, VoidCallback onYes) {
       backgroundColor: c.pal.surface,
       content: Text(msg, style: const TextStyle(fontSize: 16, height: 1.4)),
       actions: [
-        TextButton(onPressed: () => Navigator.of(c).pop(), child: const Text('Cancelar')),
+        TextButton(
+            onPressed: () => Navigator.of(c).pop(),
+            child: const Text('Cancelar')),
         FilledButton(
           onPressed: () {
             Navigator.of(c).pop();
@@ -1249,7 +1350,8 @@ void fireConfetti(int n) {
   if (ov == null) return;
   late OverlayEntry entry;
   entry = OverlayEntry(
-    builder: (_) => IgnorePointer(child: _ConfettiLayer(n, () => entry.remove())),
+    builder: (_) =>
+        IgnorePointer(child: _ConfettiLayer(n, () => entry.remove())),
   );
   ov.insert(entry);
 }
@@ -1269,7 +1371,8 @@ class _ConfettiLayer extends StatefulWidget {
   State<_ConfettiLayer> createState() => _ConfettiLayerState();
 }
 
-class _ConfettiLayerState extends State<_ConfettiLayer> with SingleTickerProviderStateMixin {
+class _ConfettiLayerState extends State<_ConfettiLayer>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _c;
   late final List<_Piece> _ps;
 
@@ -1297,7 +1400,8 @@ class _ConfettiLayerState extends State<_ConfettiLayer> with SingleTickerProvide
         cols[r.nextInt(cols.length)],
       ),
     );
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 2000));
+    _c = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 2000));
     _c.addStatusListener((s) {
       if (s == AnimationStatus.completed) widget.onDone();
     });
@@ -1337,7 +1441,9 @@ class _ConfettiPainter extends CustomPainter {
       canvas.save();
       canvas.translate(x, y);
       canvas.rotate(p.rot + p.spin * t);
-      canvas.drawRect(Rect.fromLTWH(-p.size / 2, -p.size / 3, p.size, p.size * 0.66), paint);
+      canvas.drawRect(
+          Rect.fromLTWH(-p.size / 2, -p.size / 3, p.size, p.size * 0.66),
+          paint);
       canvas.restore();
     }
   }
@@ -1386,7 +1492,12 @@ class Ring extends StatelessWidget {
   final Color? color;
   final double size;
   final Widget child;
-  const Ring({required this.value, required this.child, this.color, this.size = 250, super.key});
+  const Ring(
+      {required this.value,
+      required this.child,
+      this.color,
+      this.size = 250,
+      super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -1402,7 +1513,6 @@ class Ring extends StatelessWidget {
   }
 }
 
-
 class NowChip extends StatelessWidget {
   const NowChip({super.key});
 
@@ -1411,10 +1521,12 @@ class NowChip extends StatelessWidget {
     final p = context.pal;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: p.accent, borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(
+          color: p.accent, borderRadius: BorderRadius.circular(10)),
       child: Text(
         'Ahora',
-        style: TextStyle(color: p.onAccent, fontSize: 11.5, fontWeight: FontWeight.w600),
+        style: TextStyle(
+            color: p.onAccent, fontSize: 11.5, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -1430,7 +1542,8 @@ class Bubble extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(color: p.surface2, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+          color: p.surface2, borderRadius: BorderRadius.circular(14)),
       child: Text(text, style: const TextStyle(fontSize: 14.5, height: 1.35)),
     );
   }
@@ -1449,7 +1562,8 @@ class PetMeters extends StatelessWidget {
             children: [
               SizedBox(
                 width: 62,
-                child: Text(l, style: TextStyle(fontSize: 12.5, color: p.muted)),
+                child:
+                    Text(l, style: TextStyle(fontSize: 12.5, color: p.muted)),
               ),
               Expanded(
                 child: ClipRRect(
@@ -1492,7 +1606,10 @@ class SubPage extends StatelessWidget {
         backgroundColor: p.bg,
         surfaceTintColor: p.bg,
       ),
-      body: ListView(padding: const EdgeInsets.all(16), children: children),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [SectionGuide(title), ...children],
+      ),
     );
   }
 }

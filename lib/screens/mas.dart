@@ -5,14 +5,18 @@ import '../widgets.dart';
 import 'sub_calma.dart';
 import 'sub_crecer.dart';
 import 'sub_org.dart';
+import 'tareas.dart';
+import 'rutinas.dart';
+import 'casa.dart';
 
 const Map<String, String> subTitle = {
-  'viajes': 'Viajes',
+  'tareas': 'Tareas',
+  'rutinas': 'Rutinas',
   'retos': 'Retos de 7 días',
   'diario': 'Diario',
   'actividades': 'Actividades guiadas',
   'mascota': 'Mi mascota',
-  'bosque': 'Mi bosque',
+  'casa': 'Mi casa',
   'meditar': 'Meditar',
   'vertedero': 'Vertedero mental',
   'habitos': 'Hábitos',
@@ -25,12 +29,13 @@ const Map<String, String> subTitle = {
 };
 
 const Map<String, String> subDesc = {
-  'viajes': 'Hábitos nuevos, de uno en uno',
+  'tareas': 'Añade, divide y completa tus pendientes',
+  'rutinas': 'Sigue tus actividades paso a paso',
   'retos': 'Siete días seguidos',
   'diario': 'Gratitud y tu porqué',
   'actividades': 'Estirar, activarte, siesta',
   'mascota': 'Crece con lo que haces',
-  'bosque': 'Árboles de tus bloques',
+  'casa': 'Ordena por rincones, también en la vida real',
   'meditar': 'Meditaciones guiadas',
   'vertedero': 'Saca ideas de la cabeza',
   'habitos': 'Rachas de 7 días',
@@ -44,8 +49,10 @@ const Map<String, String> subDesc = {
 
 Widget subScreen(String key) {
   switch (key) {
-    case 'viajes':
-      return const ViajesScreen();
+    case 'tareas':
+      return const _ToolPage('Tareas', TareasScreen());
+    case 'rutinas':
+      return const _ToolPage('Rutinas', RutinasScreen());
     case 'retos':
       return const RetosScreen();
     case 'diario':
@@ -54,8 +61,8 @@ Widget subScreen(String key) {
       return const ActividadesScreen();
     case 'mascota':
       return const MascotaScreen();
-    case 'bosque':
-      return const BosqueScreen();
+    case 'casa':
+      return const CasaScreen();
     case 'meditar':
       return const MeditarScreen();
     case 'vertedero':
@@ -78,7 +85,8 @@ Widget subScreen(String key) {
 }
 
 void openSub(BuildContext context, String key) {
-  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => subScreen(key)));
+  Navigator.of(context)
+      .push(MaterialPageRoute<void>(builder: (_) => subScreen(key)));
 }
 
 class MasScreen extends StatelessWidget {
@@ -86,16 +94,24 @@ class MasScreen extends StatelessWidget {
 
   static const List<List<Object>> groups = [
     [
-      'Crecer',
-      ['viajes', 'retos', 'mascota', 'bosque'],
+      'Para tu día',
+      ['casa', 'tareas', 'rutinas', 'vertedero'],
     ],
     [
-      'Calma',
-      ['meditar', 'actividades', 'respirar', 'diario', 'animo'],
+      'Una pausa',
+      ['respirar', 'meditar'],
     ],
     [
-      'Organizarte',
-      ['vertedero', 'habitos', 'recordatorios'],
+      'A tu gusto · herramientas opcionales',
+      [
+        'mascota',
+        'habitos',
+        'diario',
+        'animo',
+        'actividades',
+        'retos',
+        'recordatorios'
+      ],
     ],
     [
       'Tú',
@@ -106,12 +122,11 @@ class MasScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    final kids = <Widget>[];
+    final kids = <Widget>[const SectionGuide('Mi espacio')];
     for (var gi = 0; gi < groups.length; gi++) {
       final name = groups[gi][0] as String;
       final keys = groups[gi][1] as List<String>;
-      kids.add(SectionLabel(name));
-      kids.add(MenuList([
+      final menu = MenuList([
         for (final k in keys)
           MenuRow(
             leading: IcoBox(k, teal: gi.isOdd),
@@ -120,8 +135,33 @@ class MasScreen extends StatelessWidget {
             trailing: Icon(Icons.chevron_right, color: p.muted),
             onTap: () => openSub(context, k),
           ),
-      ]));
+      ]);
+      if (gi == 2) {
+        kids.add(AppCard(
+          padding: EdgeInsets.zero,
+          child: ExpansionTile(
+            title: const Text('Más herramientas'),
+            subtitle: const Text('Opcionales, para cuando te apetezca'),
+            children: [menu],
+          ),
+        ));
+      } else {
+        kids.add(SectionLabel(name));
+        kids.add(menu);
+      }
     }
     return ListView(padding: const EdgeInsets.all(16), children: kids);
   }
+}
+
+class _ToolPage extends StatelessWidget {
+  final String title;
+  final Widget child;
+  const _ToolPage(this.title, this.child);
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: child,
+      );
 }

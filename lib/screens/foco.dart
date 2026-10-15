@@ -1,49 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../data.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../util.dart';
 import '../widgets.dart';
 import 'tareas.dart';
-
-/// Selector de árbol (automático o una especie concreta).
-class TreePicker extends StatelessWidget {
-  const TreePicker({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final cur = app.d.settings.tree;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ChipWrap([
-          ChipOpt('Automático', cur == 'auto', () => _setTree('auto')),
-          for (final e in trees.entries)
-            ChipOpt(
-              e.value.name,
-              cur == e.key,
-              () => _setTree(e.key),
-              leading: TreeView(e.key, size: 26),
-            ),
-        ]),
-        if (cur == 'auto')
-          const Muted(
-            'En automático, cuanto más largo el bloque, más grande el árbol.',
-            small: true,
-            padding: EdgeInsets.only(top: 6),
-          ),
-      ],
-    );
-  }
-}
-
-void _setTree(String k) {
-  app.setSetting((s) => s.tree = k);
-  app.toast(k == 'auto'
-      ? 'Árbol automático según los minutos'
-      : 'Plantarás: ${(trees[k]?.name ?? '').toLowerCase()}');
-}
+import '../house.dart';
+import 'casa.dart';
 
 class FocoScreen extends StatefulWidget {
   const FocoScreen({super.key});
@@ -63,7 +26,7 @@ class _FocoScreenState extends State<FocoScreen> {
       final t = app.d.timer;
       final st = app.d.settings;
       final p = context.pal;
-      final children = <Widget>[];
+      final children = <Widget>[const SectionGuide('Foco')];
 
       if (t == null) {
         final pend = app.rankedTasks();
@@ -86,7 +49,8 @@ class _FocoScreenState extends State<FocoScreen> {
                   underline: const SizedBox.shrink(),
                   dropdownColor: p.surface,
                   items: [
-                    const DropdownMenuItem<String>(value: '', child: Text('Sin tarea concreta')),
+                    const DropdownMenuItem<String>(
+                        value: '', child: Text('Sin tarea concreta')),
                     for (final x in pend)
                       DropdownMenuItem<String>(
                         value: x.id,
@@ -103,18 +67,11 @@ class _FocoScreenState extends State<FocoScreen> {
               ]),
               const FieldLabel('Modo'),
               ChipWrap([
-                ChipOpt('Un bloque', !_pomo, () => setState(() => _pomo = false)),
-                ChipOpt('Pomodoro (con descansos)', _pomo, () => setState(() => _pomo = true)),
+                ChipOpt(
+                    'Un bloque', !_pomo, () => setState(() => _pomo = false)),
+                ChipOpt('Pomodoro (con descansos)', _pomo,
+                    () => setState(() => _pomo = true)),
               ]),
-              const SizedBox(height: 8),
-              SwitchRow(
-                'Modo bosque',
-                st.forest,
-                (v) => app.setSetting((s) => s.forest = v),
-                subtitle:
-                    'Plantarás: ${(trees[app.speciesFor(_min)]?.name ?? '').toLowerCase()}. Si sales de la app más de ${st.grace} s, se marchita.',
-              ),
-              if (st.forest) const TreePicker(),
               const SizedBox(height: 16),
               Btn('▶ Empezar', () {
                 app.startTimer(_task.isEmpty ? null : _task, _min, _pomo);
@@ -129,13 +86,20 @@ class _FocoScreenState extends State<FocoScreen> {
         ));
       } else {
         final task = app.getTask(t.taskId);
-        final label = {'focus': 'Foco', 'short': 'Descanso corto', 'long': 'Descanso largo'}[t.kind] ?? 'Foco';
+        final label = {
+              'focus': 'Foco',
+              'short': 'Descanso corto',
+              'long': 'Descanso largo'
+            }[t.kind] ??
+            'Foco';
         final left = app.rem(t);
         final frac = clampD(left / t.dur, 0.0, 1.0);
-        final isTree = t.tree && t.kind == 'focus';
-        final species = trees.containsKey(t.species) ? t.species : treeKindFor((t.dur / 60000).round());
-        final g = ((1 - frac) * 20).round() / 20;
-
+        final chore = homeChore(task?.homeChoreId);
+        final room = chore == null
+            ? null
+            : homeRooms.firstWhere(
+                (r) => r.chores.any((c) => c.id == chore.id),
+              );
         children.add(AppCard(
           child: Column(
             children: [
@@ -143,48 +107,46 @@ class _FocoScreenState extends State<FocoScreen> {
                   '$label${t.pomo ? ' · bloque ${t.kind == 'focus' ? t.cycle + 1 : t.cycle}' : ''}',
                   small: true),
               const SizedBox(height: 10),
-              if (isTree)
-                Ring(
-                  value: frac,
-                  color: t.dead ? p.muted : p.ok,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TreeView(species, growth: g, dead: t.dead, size: 110),
-                      Text(fmt(left),
-                          style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w700)),
-                    ],
-                  ),
-                )
-              else
-                Ring(
-                  value: frac,
-                  color: t.kind == 'focus' ? p.accent : p.teal,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(fmt(left),
-                          style: const TextStyle(fontSize: 46, fontWeight: FontWeight.w700)),
-                      Muted(t.end != null ? 'en marcha' : (t.fresh ? 'preparado' : 'en pausa'),
-                          small: true),
-                    ],
-                  ),
+              if (room != null && t.kind == 'focus') ...[
+                H2('Ordenando: ${room.name}'),
+                RoomFocusScene(
+                  key: ValueKey(t.taskId),
+                  room: room,
+                  ordered: room.chores
+                          .where((c) => app.d.homeDone.containsKey(c.id))
+                          .length +
+                      (task!.done ? 0.0 : 1 - frac),
                 ),
-              if (isTree)
-                Muted(
-                  t.dead
-                      ? 'El árbol se marchitó al salir de la app. Tus minutos siguen contando.'
-                      : 'Creciendo: ${(trees[species]?.name ?? '').toLowerCase()}. No salgas de la app o se marchitará.',
-                  small: true,
-                  align: TextAlign.center,
-                  padding: const EdgeInsets.only(top: 8),
+                const Muted(
+                    'Vista previa · el cambio se guarda cuando confirmes la tarea.',
+                    small: true,
+                    align: TextAlign.center),
+                const SizedBox(height: 12),
+              ],
+              Ring(
+                value: frac,
+                color: t.kind == 'focus' ? p.accent : p.teal,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(fmt(left),
+                        style: const TextStyle(
+                            fontSize: 46, fontWeight: FontWeight.w700)),
+                    Muted(
+                        t.end != null
+                            ? 'en marcha'
+                            : (t.fresh ? 'preparado' : 'en pausa'),
+                        small: true),
+                  ],
                 ),
+              ),
               if (task != null && t.kind == 'focus') ...[
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: Text(task.title,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
+                      style: const TextStyle(
+                          fontSize: 19, fontWeight: FontWeight.w600)),
                 ),
                 nextSubRow(context, task),
               ],
@@ -202,19 +164,23 @@ class _FocoScreenState extends State<FocoScreen> {
                 alignment: WrapAlignment.center,
                 children: [
                   if (t.end != null)
-                    Btn('Pausar', app.pauseT, kind: 'primary', icon: Icons.pause)
+                    Btn('Pausar', app.pauseT,
+                        kind: 'primary', icon: Icons.pause)
                   else
                     Btn(t.fresh ? 'Empezar' : 'Reanudar', app.resumeT,
                         kind: 'primary', icon: Icons.play_arrow),
                   Btn('+5 min', app.add5),
-                  Btn(t.kind == 'focus' ? 'Terminar' : 'Saltar descanso', app.stopT, kind: 'ghost'),
+                  Btn(t.kind == 'focus' ? 'Terminar' : 'Saltar descanso',
+                      app.stopT,
+                      kind: 'ghost'),
                 ],
               ),
               if (t.pomo) LinkBtn('Cerrar la sesión pomodoro', app.endAll),
               if (task != null && t.kind == 'focus')
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Btn('✓ He terminado la tarea', () => app.completeTask(task.id),
+                  child: Btn('✓ He terminado la tarea',
+                      () => app.completeTask(task.id),
                       kind: 'ghost', block: true),
                 ),
             ],
@@ -231,7 +197,9 @@ class _FocoScreenState extends State<FocoScreen> {
                 Expanded(
                   child: Text.rich(
                     TextSpan(children: [
-                      TextSpan(text: pet.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      TextSpan(
+                          text: pet.name,
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
                       const TextSpan(text: ' se concentra contigo.\n'),
                       TextSpan(
                           text: 'Al terminar ganaréis bayas juntos.',

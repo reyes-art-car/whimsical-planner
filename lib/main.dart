@@ -7,8 +7,6 @@ import 'events.dart';
 import 'screens/foco.dart';
 import 'screens/hoy.dart';
 import 'screens/mas.dart';
-import 'screens/rutinas.dart';
-import 'screens/tareas.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'util.dart';
@@ -54,7 +52,8 @@ class _EnfoqueAppState extends State<EnfoqueApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
       app.onBackground();
     } else if (state == AppLifecycleState.resumed) {
       app.onForeground();
@@ -94,18 +93,15 @@ String greeting() {
 class Shell extends StatelessWidget {
   const Shell({super.key});
 
-  static const List<String> _titles = ['', 'Tareas', 'Foco', 'Rutinas', 'Más'];
-  static const List<String> _keys = ['hoy', 'tareas', 'foco', 'rutinas', 'mas'];
-  static const List<String> _labels = ['Hoy', 'Tareas', 'Foco', 'Rutinas', 'Más'];
+  static const List<String> _titles = ['', '', 'Foco', '', 'Mi espacio'];
+  static const List<int> _tabs = [0, 2, 4];
+  static const List<String> _keys = ['hoy', 'foco', 'mas'];
+  static const List<String> _labels = ['Hoy', 'Foco', 'Mi espacio'];
 
   Widget _body(int tab) {
     switch (tab) {
-      case 1:
-        return const TareasScreen();
       case 2:
         return const FocoScreen();
-      case 3:
-        return const RutinasScreen();
       case 4:
         return const MasScreen();
       default:
@@ -123,9 +119,10 @@ class Shell extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: p.bg,
           surfaceTintColor: p.bg,
-          titleSpacing: 16,
+          titleSpacing: 20,
           title: Text(tab == 0 ? greeting() : _titles[tab],
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 21)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 21)),
           actions: [
             if (t != null && tab != 2)
               Padding(
@@ -137,11 +134,14 @@ class Shell extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     onTap: () => app.setTab(2),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
                       child: Text(
                         '${t.kind == 'focus' ? 'Foco' : 'Pausa'} ${fmt(app.rem(t))}${t.end == null ? ' ‖' : ''}',
                         style: TextStyle(
-                            color: p.onAccent, fontWeight: FontWeight.w600, fontSize: 13),
+                            color: p.onAccent,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13),
                       ),
                     ),
                   ),
@@ -151,19 +151,24 @@ class Shell extends StatelessWidget {
           ],
         ),
         body: _body(tab),
-        bottomNavigationBar: NavigationBar(
-          backgroundColor: p.surface,
-          indicatorColor: p.accentSoft,
-          selectedIndex: tab,
-          onDestinationSelected: app.setTab,
-          destinations: [
-            for (var i = 0; i < _keys.length; i++)
-              NavigationDestination(
-                icon: Icon(iconFor(_keys[i])),
-                selectedIcon: Icon(iconFor(_keys[i]), color: p.accent),
-                label: _labels[i],
-              ),
-          ],
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: p.line)),
+          ),
+          child: NavigationBar(
+            backgroundColor: p.surface,
+            indicatorColor: p.accentSoft,
+            selectedIndex: _tabs.indexOf(tab),
+            onDestinationSelected: (index) => app.setTab(_tabs[index]),
+            destinations: [
+              for (var i = 0; i < _keys.length; i++)
+                NavigationDestination(
+                  icon: Icon(iconFor(_keys[i])),
+                  selectedIcon: Icon(iconFor(_keys[i]), color: p.accent),
+                  label: _labels[i],
+                ),
+            ],
+          ),
         ),
       );
     });

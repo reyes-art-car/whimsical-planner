@@ -10,11 +10,12 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'audio.dart';
 import 'data.dart';
+import 'house.dart';
 import 'util.dart';
 
 const String storageKey = 'enfoque.v1';
 
-enum UiKind { toast, celebrate, planted, confetti }
+enum UiKind { toast, celebrate, confetti, homeCheck }
 
 class UiEvent {
   final UiKind kind;
@@ -22,7 +23,8 @@ class UiEvent {
   final String text;
   final int n;
   final String id;
-  const UiEvent(this.kind, {this.title = '', this.text = '', this.n = 0, this.id = ''});
+  const UiEvent(this.kind,
+      {this.title = '', this.text = '', this.n = 0, this.id = ''});
 }
 
 /// Sesión de meditación en curso.
@@ -50,8 +52,10 @@ class AppState extends ChangeNotifier {
   bool loaded = false;
 
   final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
-  final GlobalKey<ScaffoldMessengerState> msgKey = GlobalKey<ScaffoldMessengerState>();
-  final StreamController<UiEvent> _events = StreamController<UiEvent>.broadcast();
+  final GlobalKey<ScaffoldMessengerState> msgKey =
+      GlobalKey<ScaffoldMessengerState>();
+  final StreamController<UiEvent> _events =
+      StreamController<UiEvent>.broadcast();
   Stream<UiEvent> get events => _events.stream;
 
   // ---- estado de interfaz compartido ----
@@ -94,12 +98,18 @@ class AppState extends ChangeNotifier {
     } catch (_) {
       d = AppData.defaults();
     }
-    if (d.timer != null) tab = 2;
+    if (d.timer != null) {
+      d.timer!.tree = false; // Un bloque antiguo continúa sin penalizar salir.
+      tab = 2;
+    }
     medMin = 5;
     petTick();
     loaded = true;
     _ticker = Timer.periodic(const Duration(milliseconds: 500), (_) => tick());
-    if (d.timer != null && d.timer!.end != null && d.timer!.tree && d.timer!.kind == 'focus') {
+    if (d.timer != null &&
+        d.timer!.end != null &&
+        d.timer!.tree &&
+        d.timer!.kind == 'focus') {
       _wakeOn();
     }
     notifyListeners();
@@ -148,7 +158,6 @@ class AppState extends ChangeNotifier {
   void confetti([int n = 70]) => _emit(UiEvent(UiKind.confetti, n: n));
   void celebrate(String title, String text, int streakN) =>
       _emit(UiEvent(UiKind.celebrate, title: title, text: text, n: streakN));
-  void showPlanted(String id) => _emit(UiEvent(UiKind.planted, id: id));
 
   void chime() => Sfx.chime(d.settings.sound);
   void bowl() => Sfx.bowl(d.settings.sound);
@@ -238,7 +247,8 @@ class AppState extends ChangeNotifier {
 
   int streakOf(Map<String, int> log) {
     var day = DateTime.now();
-    if (log[dkey(day)] == null) day = DateTime(day.year, day.month, day.day - 1);
+    if (log[dkey(day)] == null)
+      day = DateTime(day.year, day.month, day.day - 1);
     var n = 0;
     while (log[dkey(day)] != null) {
       n++;
@@ -248,12 +258,6 @@ class AppState extends ChangeNotifier {
   }
 
   int habitsToday() => d.habits.where((h) => h.log[dkey()] != null).length;
-
-  String speciesFor(int min) {
-    final s = d.settings.tree;
-    if (s != 'auto' && trees.containsKey(s)) return s;
-    return treeKindFor(min);
-  }
 
   // =====================================================================
   //  Puntos y mascota
@@ -276,7 +280,8 @@ class AppState extends ChangeNotifier {
       if (s1 > s0) {
         final name = p.name;
         Timer(const Duration(milliseconds: 900), () {
-          final extra = stageUnlock[s1] != null ? ' y lleva ${stageUnlock[s1]}' : '';
+          final extra =
+              stageUnlock[s1] != null ? ' y lleva ${stageUnlock[s1]}' : '';
           toast(s0 == 0
               ? '¡$name ha nacido!'
               : '¡$name ha crecido! Ahora es ${stageName[s1].toLowerCase()}$extra');
@@ -314,7 +319,8 @@ class AppState extends ChangeNotifier {
     if (d.timer != null && d.timer!.end != null) {
       return 'Shhh, estamos en un bloque de foco. ¡Tú puedes!';
     }
-    if (p.joy < 35) return 'Te echaba de menos. ¿Hacemos algo pequeñito juntos?';
+    if (p.joy < 35)
+      return 'Te echaba de menos. ¿Hacemos algo pequeñito juntos?';
     final now = DateTime.now();
     if (t != null && now.minute % 2 == 0) {
       return '¿Y si empezamos con «${t.title}»? Solo un ratito.';
@@ -358,7 +364,9 @@ class AppState extends ChangeNotifier {
     }
     hopN++;
     commit();
-    toast(petStage(p) == 0 ? 'El huevo se mueve un poquito' : 'A ${p.name} le encanta');
+    toast(petStage(p) == 0
+        ? 'El huevo se mueve un poquito'
+        : 'A ${p.name} le encanta');
   }
 
   void petLeave() {
@@ -377,10 +385,37 @@ class AppState extends ChangeNotifier {
     return t;
   }
 
+  Task? addHomeTask(String choreId) {
+    final chore = homeChore(choreId);
+    if (chore == null || d.homeDone.containsKey(choreId)) return null;
+    for (final task in d.tasks) {
+      if (task.homeChoreId == choreId && !task.done) return task;
+    }
+    final task = Task(
+        title: chore.title,
+        energy: 'baja',
+        est: chore.minutes,
+        homeChoreId: choreId);
+    d.tasks.add(task);
+    commit();
+    return task;
+  }
+
+  void resetHomeRoom(String roomId) {
+    for (final room in homeRooms) {
+      if (room.id != roomId) continue;
+      for (final chore in room.chores) {
+        d.homeDone.remove(chore.id);
+      }
+    }
+    commit();
+  }
+
   void completeTask(String id) {
     final t = getTask(id);
     if (t == null || t.done) return;
     t.done = true;
+    if (homeChore(t.homeChoreId) != null) d.homeDone[t.homeChoreId!] = t.id;
     t.doneAt = nowMs();
     final k = dkey();
     d.doneLog[k] = (d.doneLog[k] ?? 0) + 1;
@@ -397,7 +432,9 @@ class AppState extends ChangeNotifier {
     final t = getTask(id);
     if (t == null || !t.done) return;
     t.done = false;
-    if (t.doneAt != null && dkey(DateTime.fromMillisecondsSinceEpoch(t.doneAt!)) == dkey()) {
+    if (d.homeDone[t.homeChoreId] == t.id) d.homeDone.remove(t.homeChoreId);
+    if (t.doneAt != null &&
+        dkey(DateTime.fromMillisecondsSinceEpoch(t.doneAt!)) == dkey()) {
       final k = dkey();
       d.doneLog[k] = math.max(0, (d.doneLog[k] ?? 0) - 1);
     }
@@ -460,13 +497,18 @@ class AppState extends ChangeNotifier {
   }
 
   void dump(String text) {
-    final ls = text.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    final ls = text
+        .split('\n')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
     if (ls.isEmpty) return;
     for (final t in ls.reversed) {
       d.inbox.insert(0, InboxItem(t: t));
     }
     commit();
-    toast('${ls.length} ${ls.length == 1 ? 'cosa apuntada' : 'cosas apuntadas'}. Ya no tienes que acordarte.');
+    toast(
+        '${ls.length} ${ls.length == 1 ? 'cosa apuntada' : 'cosas apuntadas'}. Ya no tienes que acordarte.');
   }
 
   void inboxToTask(String id) {
@@ -492,11 +534,11 @@ class AppState extends ChangeNotifier {
   //  Temporizador de foco
   // =====================================================================
 
-  int rem(FocusTimer t) => t.end != null ? math.max(0, t.end! - nowMs()) : t.left;
+  int rem(FocusTimer t) =>
+      t.end != null ? math.max(0, t.end! - nowMs()) : t.left;
 
   void startTimer(String? taskId, int min, bool pomo) {
     final dur = math.max(1, min) * 60000;
-    final s = d.settings;
     d.timer = FocusTimer(
       kind: 'focus',
       dur: dur,
@@ -505,8 +547,7 @@ class AppState extends ChangeNotifier {
       taskId: taskId,
       pomo: pomo,
       fmin: math.max(1, min),
-      tree: s.forest,
-      species: speciesFor(math.max(1, min)),
+      tree: false,
     );
     if (d.timer!.tree) _wakeOn();
     tab = 2;
@@ -524,17 +565,6 @@ class AppState extends ChangeNotifier {
     return pts;
   }
 
-  TreeRec plantTree(int min, bool dead, Task? task, String? sp) {
-    final tr = TreeRec(
-      min: min,
-      kind: sp ?? treeKindFor(min),
-      dead: dead,
-      task: task?.title ?? '',
-    );
-    d.forest.add(tr);
-    return tr;
-  }
-
   FocusTimer _next(FocusTimer t, String kind, int dur, int cycle) {
     final n = t.copy();
     n.kind = kind;
@@ -550,8 +580,6 @@ class AppState extends ChangeNotifier {
     return n;
   }
 
-  String treeArt(String kind) => (trees[kind]?.fem ?? false) ? 'una' : 'un';
-
   void _finish() {
     final t = d.timer;
     if (t == null) return;
@@ -560,13 +588,7 @@ class AppState extends ChangeNotifier {
       final min = (t.dur / 60000).round();
       final pts = logFocus(min, t.taskId);
       final task = getTask(t.taskId);
-      final TreeRec? tr = t.tree ? plantTree(min, t.dead, task, t.species) : null;
       var body = '';
-      if (tr != null && !tr.dead) {
-        body += 'Has plantado ${treeArt(tr.kind)} ${(trees[tr.kind]?.name ?? '').toLowerCase()}. ';
-      } else if (tr != null) {
-        body += 'Tu árbol se marchitó, pero tus minutos cuentan. ';
-      }
       if (task != null) {
         body += 'Buen trabajo con «${task.title}». +$pts puntos';
       } else {
@@ -585,7 +607,9 @@ class AppState extends ChangeNotifier {
       confetti(40);
       save();
       notifyListeners();
-      if (tr != null && !tr.dead) showPlanted(tr.id);
+      if (task != null && !task.done && homeChore(task.homeChoreId) != null) {
+        _emit(UiEvent(UiKind.homeCheck, id: task.id));
+      }
     } else {
       alertDone('Descanso terminado.', '¿Vamos con otro bloque?');
       if (t.pomo) {
@@ -637,8 +661,7 @@ class AppState extends ChangeNotifier {
       final min = ((t.dur - rem(t)) / 60000).round();
       if (min >= 1) {
         logFocus(min, t.taskId);
-        if (t.tree) plantTree(min, true, getTask(t.taskId), t.species);
-        toast('Guardados $min min de foco.${t.tree ? ' Al terminar antes, el árbol se marchita.' : ' ¡Cuenta todo!'}');
+        toast('Guardados $min min de foco. ¡Cuenta todo!');
       }
       d.timer = null;
     } else if (t.pomo) {
@@ -683,7 +706,8 @@ class AppState extends ChangeNotifier {
     return <String>[];
   }
 
-  bool routineToday(Routine r) => r.at.isNotEmpty && r.days.contains(jsDay(DateTime.now()));
+  bool routineToday(Routine r) =>
+      r.at.isNotEmpty && r.days.contains(jsDay(DateTime.now()));
 
   bool routineNow(Routine r) {
     if (!routineToday(r)) return false;
@@ -698,7 +722,8 @@ class AppState extends ChangeNotifier {
 
   int rStreak(Routine r) {
     var day = DateTime.now();
-    if (r.hist[dkey(day)] == null) day = DateTime(day.year, day.month, day.day - 1);
+    if (r.hist[dkey(day)] == null)
+      day = DateTime(day.year, day.month, day.day - 1);
     var n = 0;
     while (r.hist[dkey(day)] != null) {
       n++;
@@ -711,7 +736,9 @@ class AppState extends ChangeNotifier {
     final prevAw = r.done != null && r.done!.date == dkey() && r.done!.aw;
     r.done = RDone(date: dkey(), ids: ids, aw: prevAw);
     if (pts > 0) gain(pts);
-    if (r.steps.isNotEmpty && r.steps.every((s) => ids.contains(s.id)) && !r.done!.aw) {
+    if (r.steps.isNotEmpty &&
+        r.steps.every((s) => ids.contains(s.id)) &&
+        !r.done!.aw) {
       r.done!.aw = true;
       r.hist[dkey()] = 1;
       gain(15);
@@ -977,85 +1004,13 @@ class AppState extends ChangeNotifier {
   }
 
   // =====================================================================
-  //  Viajes y retos
+  //  Retos opcionales
   // =====================================================================
-
-  Habit? jHabit() {
-    final a = d.journey.active;
-    if (a == null) return null;
-    final pr = d.journey.prog[a];
-    final J = journeys[a];
-    if (pr == null || J == null || pr.step >= J.steps.length) return null;
-    final name = J.steps[pr.step].h;
-    for (final h in d.habits) {
-      if (h.name == name) return h;
-    }
-    return null;
-  }
-
-  void _jEnsureHabit(String a) {
-    final pr = d.journey.prog[a];
-    final J = journeys[a];
-    if (pr == null || J == null || pr.step >= J.steps.length) return;
-    final name = J.steps[pr.step].h;
-    if (!d.habits.any((h) => h.name == name)) d.habits.add(Habit(name: name));
-  }
-
-  int jCount() {
-    final a = d.journey.active;
-    if (a == null) return 0;
-    final pr = d.journey.prog[a];
-    final h = jHabit();
-    if (pr == null || h == null) return 0;
-    return h.log.keys.where((k) => k.compareTo(pr.since) >= 0).length;
-  }
-
-  void jStart(String id) {
-    d.journey.active = id;
-    d.journey.prog.putIfAbsent(id, () => JProg(since: dkey()));
-    _jEnsureHabit(id);
-    commit();
-  }
-
-  void jQuit() {
-    d.journey.active = null;
-    commit();
-  }
-
-  void jToday() {
-    final h = jHabit();
-    if (h == null) return;
-    habitToggle(h.id, dkey());
-  }
-
-  void jNext() {
-    final a = d.journey.active;
-    if (a == null) return;
-    final J = journeys[a];
-    final pr = d.journey.prog[a];
-    if (J == null || pr == null || pr.step >= J.steps.length) return;
-    if (jCount() < J.steps[pr.step].days) return;
-    pr.step++;
-    pr.since = dkey();
-    gain(20);
-    if (pr.step >= J.steps.length) {
-      if (!d.journey.done.contains(a)) d.journey.done.add(a);
-      d.journey.active = null;
-      commit();
-      confetti(120);
-      celebrate('¡Viaje completado!',
-          '${J.name}. Ya tienes ${J.steps.length} hábitos nuevos. +20 puntos.', 0);
-      return;
-    }
-    _jEnsureHabit(a);
-    commit();
-    confetti(70);
-    celebrate('Paso completado', 'Nuevo hábito: ${J.steps[pr.step].h}. Lee tu carta. +20 puntos.', 0);
-  }
 
   List<String> cDays(Challenge c) {
     final s = parseKey(c.start);
-    return List<String>.generate(7, (i) => dkey(DateTime(s.year, s.month, s.day + i)));
+    return List<String>.generate(
+        7, (i) => dkey(DateTime(s.year, s.month, s.day + i)));
   }
 
   void cStart(String id) {
@@ -1077,7 +1032,8 @@ class AppState extends ChangeNotifier {
         c.done = true;
         gain(30);
         confetti(90);
-        celebrate('¡Reto completado!', '${retos[id]?.name ?? 'Reto'}: siete días. +30 puntos.', 0);
+        celebrate('¡Reto completado!',
+            '${retos[id]?.name ?? 'Reto'}: siete días. +30 puntos.', 0);
       }
     }
     commit();
@@ -1104,7 +1060,8 @@ class AppState extends ChangeNotifier {
     } else {
       e.g[idx] = v;
     }
-    e.p = journalPrompts[(DateTime.now().day + promptOffset) % journalPrompts.length];
+    e.p = journalPrompts[
+        (DateTime.now().day + promptOffset) % journalPrompts.length];
     final had = d.journal[k] != null && d.journal[k]!.aw;
     d.journal[k] = e;
     if (!had && (e.t.isNotEmpty || e.g.any((x) => x.isNotEmpty))) {
@@ -1336,33 +1293,13 @@ class AppState extends ChangeNotifier {
 
   /// Llamado cuando la app pasa a segundo plano.
   void onBackground() {
-    final t = d.timer;
-    if (t != null && t.end != null && t.tree && t.kind == 'focus' && !t.dead) {
-      t.hiddenAt = nowMs();
-      save();
-    }
+    save();
   }
 
   /// Llamado cuando la app vuelve a primer plano.
   void onForeground() {
-    checkWither();
-    final t = d.timer;
-    if (t != null && t.end != null && t.tree && t.kind == 'focus') _wakeOn();
     if (med != null || act != null) _wakeOn();
     tick();
-  }
-
-  void checkWither() {
-    final t = d.timer;
-    if (t != null && t.hiddenAt != null) {
-      if (t.end != null && !t.dead && nowMs() - t.hiddenAt! > d.settings.grace * 1000) {
-        t.dead = true;
-        toast('Has salido de la app y tu árbol se ha marchitado. Tus minutos siguen contando.');
-        buzz(2);
-      }
-      t.hiddenAt = null;
-      commit();
-    }
   }
 }
 

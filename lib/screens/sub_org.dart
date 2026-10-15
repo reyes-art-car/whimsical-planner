@@ -71,7 +71,9 @@ class _VertederoScreenState extends State<VertederoScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(i.t, style: const TextStyle(fontSize: 15.5)),
-                            Muted(dateTimeShort(DateTime.fromMillisecondsSinceEpoch(i.at)),
+                            Muted(
+                                dateTimeShort(
+                                    DateTime.fromMillisecondsSinceEpoch(i.at)),
                                 small: true),
                           ],
                         ),
@@ -87,7 +89,8 @@ class _VertederoScreenState extends State<VertederoScreen> {
                 ),
               if (inbox.length > 1)
                 Btn('Vaciar todo', () {
-                  askConfirm(context, '¿Vaciar el vertedero entero?', app.inboxClear);
+                  askConfirm(
+                      context, '¿Vaciar el vertedero entero?', app.inboxClear);
                 }, kind: 'ghost', block: true),
             ],
           ),
@@ -119,7 +122,8 @@ class HabitosScreen extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(h.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      child: Text(h.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
                     ),
                     Muted(() {
                       final s = app.streakOf(h.log);
@@ -128,7 +132,9 @@ class HabitosScreen extends StatelessWidget {
                     IconButton(
                       tooltip: 'Borrar hábito',
                       onPressed: () {
-                        askConfirm(context, '¿Borrar este hábito y su historial?',
+                        askConfirm(
+                            context,
+                            '¿Borrar este hábito y su historial?',
                             () => app.habitDelete(h.id));
                       },
                       icon: Icon(Icons.close, color: p.muted),
@@ -200,13 +206,15 @@ class _DayButton extends StatelessWidget {
           height: 54,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: today ? p.accent : Colors.transparent, width: 2),
+            border: Border.all(
+                color: today ? p.accent : Colors.transparent, width: 2),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(letter,
-                  style: TextStyle(fontSize: 12, color: on ? Colors.white : p.muted)),
+                  style: TextStyle(
+                      fontSize: 12, color: on ? Colors.white : p.muted)),
               Text('$number',
                   style: TextStyle(
                       fontSize: 15,
@@ -252,7 +260,8 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> {
 
   void _in(int min) {
     if (!_hasText()) return;
-    app.addReminder(_c.text.trim(), DateTime.now().add(Duration(minutes: min)), false);
+    app.addReminder(
+        _c.text.trim(), DateTime.now().add(Duration(minutes: min)), false);
     _c.clear();
   }
 
@@ -290,7 +299,8 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> {
               TextField(
                 controller: _c,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: inputDeco(context, 'Ej.: sacar la ropa de la lavadora'),
+                decoration:
+                    inputDeco(context, 'Ej.: sacar la ropa de la lavadora'),
               ),
               const FieldLabel('Rápido'),
               ChipWrap([
@@ -301,7 +311,8 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> {
               const FieldLabel('O a una hora'),
               Row(
                 children: [
-                  Btn(_time == null ? 'Elegir hora' : _time!.format(context), () async {
+                  Btn(_time == null ? 'Elegir hora' : _time!.format(context),
+                      () async {
                     final t = await showTimePicker(
                       context: context,
                       initialTime: _time ?? TimeOfDay.now(),
@@ -310,7 +321,8 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> {
                   }),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: SwitchRow('Cada día', _daily, (v) => setState(() => _daily = v)),
+                    child: SwitchRow(
+                        'Cada día', _daily, (v) => setState(() => _daily = v)),
                   ),
                 ],
               ),
@@ -335,7 +347,9 @@ class _RecordatoriosScreenState extends State<RecordatoriosScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(r.text, style: const TextStyle(fontWeight: FontWeight.w600)),
+                              Text(r.text,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600)),
                               Muted(
                                   '⏰ ${r.time} · ${r.daily ? 'cada día' : (r.off ? 'ya avisado' : (r.date == k ? 'hoy' : 'mañana'))}',
                                   small: true),
@@ -372,7 +386,8 @@ class ProgresoScreen extends StatelessWidget {
   const ProgresoScreen({super.key});
 
   double? _estRatio() {
-    final l = app.d.tasks.where((t) => t.done && t.est > 0 && t.spent > 0).toList();
+    final l =
+        app.d.tasks.where((t) => t.done && t.est > 0 && t.spent > 0).toList();
     if (l.length < 2) return null;
     return l.fold<double>(0, (a, t) => a + t.spent / t.est) / l.length;
   }
@@ -387,7 +402,8 @@ class ProgresoScreen extends StatelessWidget {
       final r = _estRatio();
       final totalDone = d.tasks.where((t) => t.done).length;
       final totalFocus = d.focus.values.fold<int>(0, (a, b) => a + b);
-      final best = d.habits.fold<int>(0, (a, h) => math.max(a, app.streakOf(h.log)));
+      final best =
+          d.habits.fold<int>(0, (a, h) => math.max(a, app.streakOf(h.log)));
       final labels = [for (final x in d7) dowLetters[jsDay(x)]];
       return SubPage('Progreso', [
         AppCard(
@@ -399,10 +415,12 @@ class ProgresoScreen extends StatelessWidget {
                   Icon(Icons.auto_awesome, color: context.pal.accent),
                   const SizedBox(width: 8),
                   Text('${d.points}',
-                      style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700)),
+                      style: const TextStyle(
+                          fontSize: 34, fontWeight: FontWeight.w700)),
                 ],
               ),
-              Text('Nivel $lvl', style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text('Nivel $lvl',
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 10),
               ProgressBar(into / 100),
               Muted('${100 - into} puntos para el nivel ${lvl + 1}',
@@ -468,8 +486,11 @@ class ProgresoScreen extends StatelessWidget {
               ]),
               const SizedBox(height: 16),
               StatsRow([
-                ['${d.forest.where((x) => !x.dead).length}', 'árboles'],
-                [minsLabel(d.med.values.fold<int>(0, (a, b) => a + b)), 'meditando'],
+                ['${d.homeDone.length}', 'rincones ordenados'],
+                [
+                  minsLabel(d.med.values.fold<int>(0, (a, b) => a + b)),
+                  'meditando'
+                ],
                 ['${d.food}', 'bayas'],
               ]),
             ],
@@ -510,11 +531,13 @@ class AjustesScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const H2('Tú'),
-              const Muted('Tu nombre', small: true, padding: EdgeInsets.only(bottom: 6)),
+              const Muted('Tu nombre',
+                  small: true, padding: EdgeInsets.only(bottom: 6)),
               SaveField(
                 initial: st.name,
                 onSave: (v) {
-                  if (v.trim() != st.name) app.setSetting((s) => s.name = v.trim());
+                  if (v.trim() != st.name)
+                    app.setSetting((s) => s.name = v.trim());
                 },
               ),
               const SizedBox(height: 8),
@@ -540,9 +563,6 @@ class AjustesScreen extends StatelessWidget {
                   (v) => app.setSetting((s) => s.cycles = v)),
               _num('Aviso antes de terminar (min, 0 = no)', st.warn, 0, 10,
                   (v) => app.setSetting((s) => s.warn = v)),
-              _num('Margen del modo bosque (segundos)', st.grace, 0, 60,
-                  (v) => app.setSetting((s) => s.grace = v),
-                  step: 5),
             ],
           ),
         ),
@@ -551,8 +571,10 @@ class AjustesScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const H2('Avisos'),
-              SwitchRow('Sonido', st.sound, (v) => app.setSetting((s) => s.sound = v)),
-              SwitchRow('Vibración', st.vibe, (v) => app.setSetting((s) => s.vibe = v)),
+              SwitchRow('Sonido', st.sound,
+                  (v) => app.setSetting((s) => s.sound = v)),
+              SwitchRow('Vibración', st.vibe,
+                  (v) => app.setSetting((s) => s.vibe = v)),
               const Muted(
                 'Los avisos aparecen dentro de la app (y suenan o vibran). No se envían notificaciones del sistema.',
                 small: true,
@@ -572,7 +594,8 @@ class AjustesScreen extends StatelessWidget {
                   ['light', 'Claro'],
                   ['dark', 'Oscuro'],
                 ])
-                  ChipOpt(e[1], st.theme == e[0], () => app.setSetting((s) => s.theme = e[0])),
+                  ChipOpt(e[1], st.theme == e[0],
+                      () => app.setSetting((s) => s.theme = e[0])),
               ]),
             ],
           ),
@@ -587,7 +610,8 @@ class AjustesScreen extends StatelessWidget {
                 small: true,
                 padding: EdgeInsets.only(bottom: 12),
               ),
-              Btn('Copia de seguridad', () => showBackupSheet(context), block: true),
+              Btn('Copia de seguridad', () => showBackupSheet(context),
+                  block: true),
               const SizedBox(height: 8),
               Btn('Borrar todo y empezar de cero', () {
                 askConfirm(
@@ -616,7 +640,8 @@ class _BackupSheet extends StatefulWidget {
 }
 
 class _BackupSheetState extends State<_BackupSheet> {
-  late final TextEditingController _c = TextEditingController(text: app.exportJson());
+  late final TextEditingController _c =
+      TextEditingController(text: app.exportJson());
 
   @override
   void dispose() {
@@ -635,7 +660,8 @@ class _BackupSheetState extends State<_BackupSheet> {
               child: Text('Copia de seguridad',
                   style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
             ),
-            Btn('Cerrar', () => Navigator.of(context).pop(), kind: 'ghost', small: true),
+            Btn('Cerrar', () => Navigator.of(context).pop(),
+                kind: 'ghost', small: true),
           ],
         ),
         const Muted(
@@ -702,7 +728,8 @@ class AcercaScreen extends StatelessWidget {
             Bullet(
                 'Cuando una tarea te da pereza, normalmente el primer paso es demasiado grande. Trocéala.'),
             Bullet('Elige qué hacer según tu energía, además de la urgencia.'),
-            Bullet('Apunta las cosas y déjalas a la vista. Lo que no ves, se olvida.'),
+            Bullet(
+                'Apunta las cosas y déjalas a la vista. Lo que no ves, se olvida.'),
             Bullet(
                 'El aviso antes de que acabe el temporizador te ayuda a cambiar de tarea sin brusquedad.'),
             Bullet('Un día malo no borra lo que has avanzado.'),

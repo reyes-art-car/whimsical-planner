@@ -7,208 +7,8 @@ import '../state.dart';
 import '../theme.dart';
 import '../util.dart';
 import '../widgets.dart';
-import 'foco.dart';
 
-// =====================================================================
-//  Viajes
-// =====================================================================
-
-class ViajesScreen extends StatelessWidget {
-  const ViajesScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Live((context) {
-      final p = context.pal;
-      final j = app.d.journey;
-      final a = j.active;
-      final kids = <Widget>[];
-
-      if (a != null && journeys[a] != null && j.prog[a] != null) {
-        final J = journeys[a]!;
-        final pr = j.prog[a]!;
-        if (pr.step < J.steps.length) {
-          final st = J.steps[pr.step];
-          final n = app.jCount();
-          final h = app.jHabit();
-          final today = h != null && h.log[dkey()] != null;
-          kids.add(AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    IcoBox(J.icon),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(J.name,
-                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-                          Muted('Paso ${pr.step + 1} de ${J.steps.length}', small: true),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ProgressBar(pr.step / J.steps.length),
-                const SizedBox(height: 12),
-                _Letter(st),
-                const SizedBox(height: 12),
-                DotsRow(st.days, math.min(n, st.days)),
-                const SizedBox(height: 12),
-                if (n >= st.days)
-                  Btn(
-                    pr.step + 1 < J.steps.length
-                        ? 'Paso completado · leer la siguiente carta'
-                        : 'Terminar el viaje',
-                    app.jNext,
-                    kind: 'primary',
-                    block: true,
-                  )
-                else ...[
-                  Btn(today ? 'Hecho hoy · desmarcar' : 'Lo he hecho hoy', app.jToday,
-                      kind: today ? 'normal' : 'primary', block: true),
-                  Muted('Lleva $n de ${st.days} días. El hábito también aparece en Hábitos.',
-                      small: true, padding: const EdgeInsets.only(top: 8)),
-                ],
-                const SizedBox(height: 14),
-                for (var i = 0; i < J.steps.length; i++)
-                  Row(
-                    children: [
-                      CheckCircle(i < pr.step, null, small: true),
-                      Expanded(
-                        child: Text(J.steps[i].h,
-                            style: TextStyle(color: i > pr.step ? p.muted : p.text)),
-                      ),
-                      Muted(i < pr.step ? 'hecho' : (i == pr.step ? 'ahora' : ''), small: true),
-                    ],
-                  ),
-                LinkBtn('Pausar este viaje', () {
-                  askConfirm(
-                    context,
-                    '¿Pausar este viaje? Podrás retomarlo donde lo dejaste.',
-                    app.jQuit,
-                  );
-                }),
-              ],
-            ),
-          ));
-        }
-      }
-
-      kids.add(SectionLabel(a != null ? 'Otros viajes' : 'Elige un viaje'));
-      kids.add(const Muted(
-        'Cada viaje añade un hábito pequeño. Cuando lo repites varios días, se abre la siguiente carta y el siguiente hábito.',
-        small: true,
-        padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
-      ));
-      journeys.forEach((k, J) {
-        if (k == a) return;
-        final pr = j.prog[k];
-        final done = j.done.contains(k);
-        kids.add(AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  IcoBox(J.icon, teal: true),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(J.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        Muted(J.desc, small: true),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              Muted(J.steps.map((s) => s.h).join(' · '),
-                  small: true, padding: const EdgeInsets.symmetric(vertical: 10)),
-              Btn(
-                done
-                    ? 'Completado · repetir'
-                    : (pr != null ? 'Retomar (paso ${pr.step + 1})' : 'Empezar viaje'),
-                () {
-                  void go() => app.jStart(k);
-                  if (a != null && a != k) {
-                    askConfirm(
-                      context,
-                      'Ya tienes un viaje en marcha. ¿Cambiar a este? Tu progreso del otro se guarda.',
-                      go,
-                    );
-                  } else {
-                    go();
-                  }
-                },
-                kind: done ? 'normal' : 'teal',
-                block: true,
-              ),
-            ],
-          ),
-        ));
-      });
-      return SubPage('Viajes', kids);
-    });
-  }
-}
-
-class _Letter extends StatelessWidget {
-  final JourneyStep st;
-  const _Letter(this.st);
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.pal;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: double.infinity,
-        color: p.surface2,
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(width: 4, color: p.accent),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final line in st.letter)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text(line, style: const TextStyle(fontSize: 15, height: 1.45)),
-                        ),
-                      Text.rich(
-                        TextSpan(children: [
-                          TextSpan(text: 'Tu próximo hábito: ', style: TextStyle(color: p.muted)),
-                          TextSpan(text: st.h, style: const TextStyle(fontWeight: FontWeight.w700)),
-                          TextSpan(text: ' · ${st.days} días', style: TextStyle(color: p.muted)),
-                        ]),
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// =====================================================================
-//  Retos de 7 días
-// =====================================================================
+// Retos opcionales, mascota y bosque.
 
 class RetosScreen extends StatelessWidget {
   const RetosScreen({super.key});
@@ -239,11 +39,15 @@ class RetosScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(R.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Text(R.name,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w600)),
                         Muted(
                             c.done
                                 ? 'Completado'
-                                : (over ? 'Terminado con $n de 7' : 'Día ${math.min(7, idx + 1)} de 7'),
+                                : (over
+                                    ? 'Terminado con $n de 7'
+                                    : 'Día ${math.min(7, idx + 1)} de 7'),
                             small: true),
                       ],
                     ),
@@ -254,9 +58,13 @@ class RetosScreen extends StatelessWidget {
               DotsMarks([for (final d in ds) c.log[d] != null], idx),
               const SizedBox(height: 12),
               if (!c.done && !over)
-                Btn(c.log[k] != null ? 'Hecho hoy · desmarcar' : 'Lo he cumplido hoy',
+                Btn(
+                    c.log[k] != null
+                        ? 'Hecho hoy · desmarcar'
+                        : 'Lo he cumplido hoy',
                     () => app.cToggle(id),
-                    kind: c.log[k] != null ? 'normal' : 'primary', block: true)
+                    kind: c.log[k] != null ? 'normal' : 'primary',
+                    block: true)
               else
                 Btn('Empezar otra vez', () => app.cStart(id), block: true),
               LinkBtn('Quitar reto', () {
@@ -273,7 +81,8 @@ class RetosScreen extends StatelessWidget {
       kids.add(SectionLabel(act.isNotEmpty ? 'Más retos' : 'Elige un reto'));
       final rest = retos.entries.where((e) => !act.containsKey(e.key)).toList();
       if (rest.isEmpty) {
-        kids.add(const Muted('Tienes todos los retos en marcha.', padding: EdgeInsets.all(14)));
+        kids.add(const Muted('Tienes todos los retos en marcha.',
+            padding: EdgeInsets.all(14)));
       } else {
         kids.add(MenuList([
           for (final e in rest)
@@ -324,7 +133,8 @@ class _AdoptSheetState extends State<_AdoptSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final pv = Pet(name: '', kind: _kind, color: _color, xp: 30, hunger: 90, joy: 90);
+    final pv =
+        Pet(name: '', kind: _kind, color: _color, xp: 30, hunger: 90, joy: 90);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -334,7 +144,8 @@ class _AdoptSheetState extends State<_AdoptSheet> {
               child: Text('Adopta a tu compañero',
                   style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
             ),
-            Btn('Cerrar', () => Navigator.of(context).pop(), kind: 'ghost', small: true),
+            Btn('Cerrar', () => Navigator.of(context).pop(),
+                kind: 'ghost', small: true),
           ],
         ),
         Center(child: PetView(pv, 'happy', size: 150)),
@@ -353,11 +164,13 @@ class _AdoptSheetState extends State<_AdoptSheet> {
         const FieldLabel('Especie'),
         ChipWrap([
           for (final e in petKinds.entries)
-            ChipOpt(e.value, _kind == e.key, () => setState(() => _kind = e.key)),
+            ChipOpt(
+                e.value, _kind == e.key, () => setState(() => _kind = e.key)),
         ]),
         const FieldLabel('Color'),
         ChipWrap([
-          for (final c in petColors) Swatch(c, _color == c, () => setState(() => _color = c)),
+          for (final c in petColors)
+            Swatch(c, _color == c, () => setState(() => _color = c)),
         ]),
         const SizedBox(height: 18),
         Btn('Adoptar', () {
@@ -382,8 +195,10 @@ class MascotaScreen extends StatelessWidget {
           AppCard(
             child: Column(
               children: [
-                PetView(Pet(name: '', kind: 'gato', color: '#E9A15B'), 'ok', size: 150),
-                const Muted('Aún no tienes mascota.', padding: EdgeInsets.symmetric(vertical: 8)),
+                PetView(Pet(name: '', kind: 'gato', color: '#E9A15B'), 'ok',
+                    size: 150),
+                const Muted('Aún no tienes mascota.',
+                    padding: EdgeInsets.symmetric(vertical: 8)),
                 Btn('Adoptar', () => showAdoptSheet(context), kind: 'primary'),
               ],
             ),
@@ -404,9 +219,11 @@ class MascotaScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: Text(pet.name,
-                    style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w600)),
+                    style: const TextStyle(
+                        fontSize: 21, fontWeight: FontWeight.w600)),
               ),
-              Muted('${petKinds[pet.kind] ?? ''} · ${stageName[st]}', small: true),
+              Muted('${petKinds[pet.kind] ?? ''} · ${stageName[st]}',
+                  small: true),
               const SizedBox(height: 10),
               ProgressBar(pr),
               Muted(
@@ -416,14 +233,18 @@ class MascotaScreen extends StatelessWidget {
                 small: true,
                 padding: const EdgeInsets.only(top: 4),
               ),
-              if (st > 0) Padding(padding: const EdgeInsets.only(top: 10), child: PetMeters(pet)),
+              if (st > 0)
+                Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: PetMeters(pet)),
               const SizedBox(height: 14),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 alignment: WrapAlignment.center,
                 children: [
-                  if (st > 0) Btn('Dar baya · ${app.d.food}', app.petFeed, kind: 'teal'),
+                  if (st > 0)
+                    Btn('Dar baya · ${app.d.food}', app.petFeed, kind: 'teal'),
                   Btn('Mimar', app.petPat),
                 ],
               ),
@@ -435,8 +256,10 @@ class MascotaScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               H2('Cómo cuidarla'),
-              _Bullet('Cada cosa que haces suma puntos. Cada 10 puntos ganas una baya.'),
-              _Bullet('Las bayas le llenan la barriga. Su alegría sube cuando tú avanzas.'),
+              _Bullet(
+                  'Cada cosa que haces suma puntos. Cada 10 puntos ganas una baya.'),
+              _Bullet(
+                  'Las bayas le llenan la barriga. Su alegría sube cuando tú avanzas.'),
               _Bullet(
                   'Si pasan días sin cuidarla se pone tristona, pero nunca se muere. En cuanto vuelves, se recupera.'),
               _Bullet('De noche duerme. Tú también deberías.'),
@@ -536,10 +359,13 @@ class _Bullet extends StatelessWidget {
             child: Container(
               width: 6,
               height: 6,
-              decoration: BoxDecoration(color: context.pal.accent, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                  color: context.pal.accent, shape: BoxShape.circle),
             ),
           ),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 14.5, height: 1.4))),
+          Expanded(
+              child: Text(text,
+                  style: const TextStyle(fontSize: 14.5, height: 1.4))),
         ],
       ),
     );
@@ -553,142 +379,4 @@ class Bullet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _Bullet(text);
-}
-
-// =====================================================================
-//  Bosque
-// =====================================================================
-
-class BosqueScreen extends StatefulWidget {
-  const BosqueScreen({super.key});
-
-  @override
-  State<BosqueScreen> createState() => _BosqueScreenState();
-}
-
-class _BosqueScreenState extends State<BosqueScreen> {
-  String _ff = 'semana';
-
-  @override
-  Widget build(BuildContext context) {
-    return Live((context) {
-      final p = context.pal;
-      final st = app.d.settings;
-      final days = _ff == 'hoy' ? 1 : (_ff == 'semana' ? 7 : 0);
-      final since = days > 0 ? dkey(lastDays(days).first) : '';
-      final list =
-          app.d.forest.where((x) => days == 0 || x.d.compareTo(since) >= 0).toList();
-      final alive = list.where((x) => !x.dead).length;
-      final mins = list.fold<int>(0, (a, x) => a + x.min);
-      final cur = st.tree;
-
-      return SubPage('Mi bosque', [
-        ChipWrap([
-          ChipOpt('Hoy', _ff == 'hoy', () => setState(() => _ff = 'hoy')),
-          ChipOpt('7 días', _ff == 'semana', () => setState(() => _ff = 'semana')),
-          ChipOpt('Todo', _ff == 'todo', () => setState(() => _ff = 'todo')),
-        ]),
-        const SizedBox(height: 12),
-        AppCard(
-          child: StatsRow([
-            ['$alive', 'árboles vivos'],
-            ['${list.length - alive}', 'marchitos'],
-            [minsLabel(mins), 'de foco'],
-          ]),
-        ),
-        if (list.isNotEmpty)
-          AppCard(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              children: [
-                ForestScene(
-                  list,
-                  height: math.max(210.0, 110.0 + (list.length / 6).ceil() * 44),
-                  per: 6,
-                  hl: list.last.id,
-                ),
-                const Muted(
-                  'Los árboles más recientes están delante.',
-                  small: true,
-                  align: TextAlign.center,
-                  padding: EdgeInsets.only(top: 8),
-                ),
-              ],
-            ),
-          )
-        else
-          AppCard(
-            child: Column(
-              children: [
-                const TreeView('pino', growth: 0.5, size: 90),
-                const Muted(
-                  'Aún no hay árboles aquí. Empieza un bloque de foco con el modo bosque para plantar el primero.',
-                  align: TextAlign.center,
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                ),
-                Btn('Ir a Foco', () {
-                  app.tab = 2;
-                  app.commit();
-                  Navigator.of(context).popUntil((r) => r.isFirst);
-                }, kind: 'primary'),
-              ],
-            ),
-          ),
-        AppCard(
-          padding: const EdgeInsets.fromLTRB(0, 16, 0, 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: H2('Elige tu árbol')),
-              const Muted(
-                'El que elijas se plantará en tus próximos bloques de foco.',
-                small: true,
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-              ),
-              MenuRow(
-                leading: CheckCircle(cur == 'auto', null, small: true),
-                title: 'Automático',
-                subtitle: 'Brote, arbusto, pino, roble o cerezo según los minutos',
-                onTap: () => app.setSetting((s) => s.tree = 'auto'),
-              ),
-              for (final e in trees.entries)
-                MenuRow(
-                  leading: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CheckCircle(cur == e.key, null, small: true),
-                      TreeView(e.key, size: 44),
-                    ],
-                  ),
-                  title: e.value.name,
-                  subtitle: e.value.autoMin == null
-                      ? null
-                      : (e.value.autoMin! > 0
-                          ? 'automático desde ${e.value.autoMin} min'
-                          : 'automático con menos de 10 min'),
-                  trailing: Muted(
-                    () {
-                      final n = app.d.forest.where((x) => x.kind == e.key && !x.dead).length;
-                      return n > 0 ? '$n' : '';
-                    }(),
-                    small: true,
-                  ),
-                  onTap: () {
-                    app.setSetting((s) => s.tree = e.key);
-                    app.toast('Plantarás: ${e.value.name.toLowerCase()}');
-                  },
-                ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-                child: Text(
-                  'Mientras crece tu árbol, la pantalla se mantiene encendida. Si cambias de app más de ${st.grace} s o terminas antes de tiempo, el árbol se marchita (tus minutos de foco cuentan igual).',
-                  style: TextStyle(fontSize: 13, color: p.muted, height: 1.4),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ]);
-    });
-  }
 }

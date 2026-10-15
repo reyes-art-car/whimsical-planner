@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Paleta de lilas, morados y añil (misma que la versión web).
+/// Jardín de papel: crema, lavanda y salvia, también en modo nocturno.
 class Pal {
   final Color bg, surface, surface2, text, muted, line;
   final Color accent, accentSoft, teal, tealSoft, ok, gold;
@@ -28,38 +28,38 @@ class Pal {
   });
 
   static const Pal light = Pal(
-    bg: Color(0xFFF5F2FA),
-    surface: Color(0xFFFFFFFF),
-    surface2: Color(0xFFECE6F5),
-    text: Color(0xFF221B33),
-    muted: Color(0xFF615977),
-    line: Color(0xFFDDD4EA),
-    accent: Color(0xFF6A3EC2),
-    accentSoft: Color(0xFFEBE1FB),
-    teal: Color(0xFF3F4BB0),
-    tealSoft: Color(0xFFE1E4F8),
-    ok: Color(0xFF5B47C9),
-    gold: Color(0xFFC98F12),
-    ground: Color(0xFFE5DFF1),
-    sky1: Color(0xFFD8CBF6),
-    sky2: Color(0xFFF4EFFC),
-    hill1: Color(0xFFC3DBB7),
-    hill2: Color(0xFFA8CC9B),
+    bg: Color(0xFFFAF6ED),
+    surface: Color(0xFFFFFDF8),
+    surface2: Color(0xFFF0EBDD),
+    text: Color(0xFF3C3546),
+    muted: Color(0xFF726879),
+    line: Color(0xFFE5DDCF),
+    accent: Color(0xFF75539D),
+    accentSoft: Color(0xFFECE3F5),
+    teal: Color(0xFF456B57),
+    tealSoft: Color(0xFFE4EDDC),
+    ok: Color(0xFF52765C),
+    gold: Color(0xFFAD791C),
+    ground: Color(0xFFECE6D4),
+    sky1: Color(0xFFE7DCF5),
+    sky2: Color(0xFFFFF6E6),
+    hill1: Color(0xFFC9D9B5),
+    hill2: Color(0xFFA7C39A),
     onAccent: Color(0xFFFFFFFF),
   );
 
   static const Pal dark = Pal(
-    bg: Color(0xFF15121E),
-    surface: Color(0xFF1E1A2A),
-    surface2: Color(0xFF29233A),
+    bg: Color(0xFF211E29),
+    surface: Color(0xFF2B2633),
+    surface2: Color(0xFF36303F),
     text: Color(0xFFEEEAF7),
     muted: Color(0xFFA9A1BD),
     line: Color(0xFF372F4A),
     accent: Color(0xFFB592FF),
     accentSoft: Color(0xFF2F2448),
-    teal: Color(0xFF939DFF),
-    tealSoft: Color(0xFF22264B),
-    ok: Color(0xFFA08FFF),
+    teal: Color(0xFFB5D2A4),
+    tealSoft: Color(0xFF293B30),
+    ok: Color(0xFFB5D2A4),
     gold: Color(0xFFE8B53A),
     ground: Color(0xFF241E35),
     sky1: Color(0xFF100C20),
@@ -98,5 +98,25 @@ ThemeData buildTheme(Brightness b) {
     textTheme: text,
     dividerColor: p.line,
     canvasColor: p.bg,
+    appBarTheme: AppBarTheme(elevation: 0, scrolledUnderElevation: 0, foregroundColor: p.text),
+    navigationBarTheme: NavigationBarThemeData(
+      elevation: 0,
+      height: 76,
+      surfaceTintColor: Colors.transparent,
+      labelTextStyle: WidgetStatePropertyAll(TextStyle(
+        fontFamily: 'Lexend', fontSize: 12, fontWeight: FontWeight.w500, color: p.text,
+      )),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: p.surface,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: p.line),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: p.accent, width: 2),
+      ),
+    ),
   );
 }
