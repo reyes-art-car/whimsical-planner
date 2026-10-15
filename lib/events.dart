@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'data.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
-import 'screens/mas.dart';
+import 'house.dart';
+import 'screens/casa.dart';
 
 /// Reparte los avisos de [AppState] (mensajes, celebraciones, confeti…).
 void handleUiEvent(UiEvent e) {
@@ -15,7 +15,8 @@ void handleUiEvent(UiEvent e) {
       if (m == null) return;
       m.hideCurrentSnackBar();
       m.showSnackBar(SnackBar(
-        content: Text(e.text, style: const TextStyle(fontSize: 14.5, height: 1.3)),
+        content:
+            Text(e.text, style: const TextStyle(fontSize: 14.5, height: 1.3)),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(milliseconds: 3400),
       ));
@@ -27,9 +28,47 @@ void handleUiEvent(UiEvent e) {
       if (ctx == null) return;
       showSheet<void>(ctx, (c) => _CelebrateSheet(e.title, e.text, e.n));
       break;
-    case UiKind.planted:
+    case UiKind.homeCheck:
       if (ctx == null) return;
-      showSheet<void>(ctx, (c) => _PlantedSheet(e.id));
+      final task = app.getTask(e.id);
+      if (task == null || task.done || homeChore(task.homeChoreId) == null) {
+        return;
+      }
+      showSheet<void>(
+          ctx,
+          (c) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.cottage_outlined,
+                      size: 56, color: Theme.of(c).colorScheme.primary),
+                  const H2('¿Has hecho esta tarea?'),
+                  Text(task.title, textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  const Muted(
+                      'El bloque ha terminado. Confirma lo que has hecho en casa para guardar el cambio.',
+                      align: TextAlign.center),
+                  const SizedBox(height: 16),
+                  Btn('Sí, ya lo he hecho', () {
+                    app.completeTask(task.id);
+                    Navigator.of(c).pop();
+                    app.navKey.currentState?.push(MaterialPageRoute<void>(
+                      builder: (_) => CasaScreen(
+                          initialRoom: homeRooms
+                              .firstWhere(
+                                (r) => r.chores.any(
+                                    (chore) => chore.id == task.homeChoreId),
+                              )
+                              .id),
+                    ));
+                  }, kind: 'primary', block: true),
+                  const SizedBox(height: 8),
+                  Btn('Todavía no', () => Navigator.of(c).pop(), block: true),
+                  const Muted(
+                      'Si necesitas más tiempo, la tarea seguirá pendiente.',
+                      small: true,
+                      padding: EdgeInsets.only(top: 10)),
+                ],
+              ));
       break;
   }
 }
@@ -49,67 +88,21 @@ class _CelebrateSheet extends StatelessWidget {
         Text(title,
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
-        Muted(text, align: TextAlign.center, padding: const EdgeInsets.symmetric(vertical: 8)),
+        Muted(text,
+            align: TextAlign.center,
+            padding: const EdgeInsets.symmetric(vertical: 8)),
         if (streak > 1)
           Text.rich(
             TextSpan(children: [
-              TextSpan(text: '$streak días seguidos.', style: const TextStyle(fontWeight: FontWeight.w700)),
+              TextSpan(
+                  text: '$streak días seguidos.',
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
               const TextSpan(text: ' No rompas la cadena.'),
             ]),
           ),
         const SizedBox(height: 14),
-        Btn('Seguir', () => Navigator.of(context).pop(), kind: 'primary', block: true),
-      ],
-    );
-  }
-}
-
-class _PlantedSheet extends StatelessWidget {
-  final String id;
-  const _PlantedSheet(this.id);
-
-  @override
-  Widget build(BuildContext context) {
-    TreeRec? tr;
-    for (final x in app.d.forest) {
-      if (x.id == id) tr = x;
-    }
-    if (tr == null) return const SizedBox.shrink();
-    final t = tr;
-    final spec = trees[t.kind];
-    final name = (spec?.name ?? '').toLowerCase();
-    final alive = app.d.forest.where((x) => !x.dead).length;
-    final last = app.d.forest.length > 24
-        ? app.d.forest.sublist(app.d.forest.length - 24)
-        : app.d.forest;
-    return Column(
-      children: [
-        TreeView(t.kind, size: 130),
-        Text('¡${(spec?.fem ?? false) ? 'Nueva' : 'Nuevo'} $name en tu bosque!',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w600)),
-        Muted(
-          '${t.min} min de foco${t.task.isNotEmpty ? ' en «${t.task}»' : ''}. Ya tienes $alive ${alive == 1 ? 'árbol' : 'árboles'}.',
-          small: true,
-          align: TextAlign.center,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-        ),
-        ForestScene(last, height: 170, per: 8, hl: t.id),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            Expanded(
-              child: Btn('Ver mi bosque', () {
-                Navigator.of(context).pop();
-                app.navKey.currentState?.push(
-                  MaterialPageRoute<void>(builder: (_) => subScreen('bosque')),
-                );
-              }, kind: 'primary'),
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: Btn('Seguir', () => Navigator.of(context).pop())),
-          ],
-        ),
+        Btn('Seguir', () => Navigator.of(context).pop(),
+            kind: 'primary', block: true),
       ],
     );
   }

@@ -17,8 +17,8 @@ class SubTask {
   String t;
   bool done;
   SubTask({String? id, required this.t, this.done = false}) : id = id ?? uid();
-  factory SubTask.fromJson(Map<String, dynamic> j) =>
-      SubTask(id: jStr(j['id'], uid()), t: jStr(j['t']), done: jBool(j['done']));
+  factory SubTask.fromJson(Map<String, dynamic> j) => SubTask(
+      id: jStr(j['id'], uid()), t: jStr(j['t']), done: jBool(j['done']));
   Map<String, dynamic> toJson() => {'id': id, 't': t, 'done': done};
 }
 
@@ -33,6 +33,7 @@ class Task {
   int created;
   int spent;
   int? doneAt;
+  String? homeChoreId;
 
   Task({
     String? id,
@@ -45,6 +46,7 @@ class Task {
     int? created,
     this.spent = 0,
     this.doneAt,
+    this.homeChoreId,
   })  : id = id ?? uid(),
         subs = subs ?? <SubTask>[],
         created = created ?? nowMs();
@@ -52,6 +54,8 @@ class Task {
   factory Task.fromJson(Map<String, dynamic> j) => Task(
         id: jStr(j['id'], uid()),
         title: jStr(j['title']),
+        homeChoreId:
+            j['homeChoreId'] is String ? j['homeChoreId'] as String : null,
         energy: jStr(j['energy'], 'media'),
         est: jInt(j['est']),
         subs: jList(j['subs']).map((e) => SubTask.fromJson(jMap(e))).toList(),
@@ -73,6 +77,7 @@ class Task {
         'created': created,
         'spent': spent,
         'doneAt': doneAt,
+        'homeChoreId': homeChoreId,
       };
 }
 
@@ -103,8 +108,8 @@ class RDone {
   List<String> ids;
   bool aw;
   RDone({required this.date, required this.ids, this.aw = false});
-  factory RDone.fromJson(Map<String, dynamic> j) => RDone(
-      date: jStr(j['date']), ids: jStrList(j['ids']), aw: jBool(j['aw']));
+  factory RDone.fromJson(Map<String, dynamic> j) =>
+      RDone(date: jStr(j['date']), ids: jStrList(j['ids']), aw: jBool(j['aw']));
   Map<String, dynamic> toJson() => {'date': date, 'ids': ids, 'aw': aw};
 }
 
@@ -570,7 +575,8 @@ class AppData {
   Pet? pet;
   int food;
   int foodProg;
-  List<TreeRec> forest;
+  List<TreeRec> forest; // Copias antiguas.
+  Map<String, String> homeDone;
   Map<String, int> med;
   JourneyState journey;
   Map<String, Challenge> challenges;
@@ -595,6 +601,7 @@ class AppData {
     this.food = 3,
     this.foodProg = 0,
     List<TreeRec>? forest,
+    Map<String, String>? homeDone,
     Map<String, int>? med,
     JourneyState? journey,
     Map<String, Challenge>? challenges,
@@ -611,6 +618,7 @@ class AppData {
         doneLog = doneLog ?? <String, int>{},
         reminders = reminders ?? <Reminder>[],
         forest = forest ?? <TreeRec>[],
+        homeDone = homeDone ?? <String, String>{},
         med = med ?? <String, int>{},
         journey = journey ?? JourneyState(),
         challenges = challenges ?? <String, Challenge>{},
@@ -686,9 +694,11 @@ class AppData {
     final moods = <String, Mood>{};
     jMap(j['moods']).forEach((k, v) => moods[k] = Mood.fromJson(jMap(v)));
     final ch = <String, Challenge>{};
-    jMap(j['challenges']).forEach((k, v) => ch[k] = Challenge.fromJson(jMap(v)));
+    jMap(j['challenges'])
+        .forEach((k, v) => ch[k] = Challenge.fromJson(jMap(v)));
     final jr = <String, JournalEntry>{};
-    jMap(j['journal']).forEach((k, v) => jr[k] = JournalEntry.fromJson(jMap(v)));
+    jMap(j['journal'])
+        .forEach((k, v) => jr[k] = JournalEntry.fromJson(jMap(v)));
 
     final d = AppData(
       mig: jInt(j['mig']),
@@ -708,6 +718,7 @@ class AppData {
       food: jInt(j['food'], 3),
       foodProg: jInt(j['foodProg']),
       forest: jList(j['forest']).map((e) => TreeRec.fromJson(jMap(e))).toList(),
+      homeDone: jMap(j['homeDone']).map((k, v) => MapEntry(k, jStr(v))),
       med: jIntMap(j['med']),
       journey: JourneyState.fromJson(jMap(j['journey'])),
       challenges: ch,
@@ -725,7 +736,8 @@ class AppData {
     if (mig >= 1) return;
     void add(Routine? r, String txt, int min, String after) {
       if (r == null) return;
-      final exists = r.steps.any((x) => x.t.toLowerCase().startsWith(txt.toLowerCase()));
+      final exists =
+          r.steps.any((x) => x.t.toLowerCase().startsWith(txt.toLowerCase()));
       if (exists) return;
       final i = r.steps.indexWhere((x) => x.t == after);
       final st = RStep(t: txt, min: min);
@@ -771,6 +783,7 @@ class AppData {
         'food': food,
         'foodProg': foodProg,
         'forest': forest.map((e) => e.toJson()).toList(),
+        'homeDone': homeDone,
         'med': med,
         'journey': journey.toJson(),
         'challenges': challenges.map((k, v) => MapEntry(k, v.toJson())),
@@ -863,93 +876,7 @@ String treeKindFor(int min) {
   return 'brote';
 }
 
-// Viajes
-class JourneyStep {
-  final String h;
-  final int days;
-  final List<String> letter;
-  const JourneyStep(this.h, this.days, this.letter);
-}
-
-class JourneyDef {
-  final String name;
-  final String desc;
-  final String icon;
-  final List<JourneyStep> steps;
-  const JourneyDef(this.name, this.desc, this.icon, this.steps);
-}
-
-const Map<String, JourneyDef> journeys = {
-  'manana': JourneyDef(
-    'Mañanas con energía',
-    'Cuatro hábitos para que el día no empiece cuesta arriba.',
-    'sol',
-    [
-      JourneyStep('Beber agua al despertar', 3, [
-        'Pasas muchas horas de la noche sin beber. Un vaso de agua al levantarte es la forma más fácil de empezar el día con algo ya hecho.',
-        'Deja el vaso preparado la noche anterior, donde lo veas. Si lo ves, lo bebes.',
-      ]),
-      JourneyStep('Estirar 2 minutos', 3, [
-        'Ya tienes el agua. Ahora suma dos minutos de estiramientos. No hace falta una tabla perfecta: cuello, hombros, brazos arriba y listo.',
-        'Si no sabes qué hacer, abre Actividades guiadas y sigue «Estiramientos».',
-      ]),
-      JourneyStep('Desayunar sin pantallas', 4, [
-        'Si el día empieza con el móvil, tu atención ya va saltando de una cosa a otra antes de las nueve.',
-        'Prueba a desayunar sin pantalla. Si te parece mucho, empieza por los primeros cinco minutos.',
-      ]),
-      JourneyStep('Mirar el plan del día', 4, [
-        'Último paso. Antes de lanzarte, abre Enfoque y mira «Haz esto ahora». Una tarea elegida con calma vale más que una lista de veinte.',
-        'Cuando lo completes, tu mañana tendrá cuatro hábitos encadenados.',
-      ]),
-    ],
-  ),
-  'dormir': JourneyDef(
-    'Dormir mejor',
-    'Noches más tranquilas, un cambio cada vez.',
-    'luna',
-    [
-      JourneyStep('Apuntar lo pendiente antes de dormir', 3, [
-        'Muchas noches no cuesta dormir por falta de sueño. Cuesta porque la cabeza sigue repasando cosas.',
-        'Antes de acostarte, apúntalo todo en el vertedero mental. Mañana ya lo ordenarás.',
-      ]),
-      JourneyStep('Pantallas fuera 30 minutos antes', 4, [
-        'El móvil mantiene el cerebro en modo alerta. Media hora sin pantallas le da tiempo a bajar revoluciones.',
-        'Deja el móvil cargando fuera del dormitorio y usa un despertador normal si lo necesitas.',
-      ]),
-      JourneyStep('Acostarme a la misma hora', 5, [
-        'Al cuerpo le sienta bien la rutina. Elige una hora realista y mantenla también el fin de semana, con media hora de margen.',
-        'Crea un recordatorio en la app para que te avise.',
-      ]),
-      JourneyStep('Dormitorio fresco y oscuro', 3, [
-        'Revisa tu habitación: persianas, lucecitas de aparatos, temperatura. Son cambios pequeños que ayudan todas las noches sin esfuerzo.',
-      ]),
-    ],
-  ),
-  'foco': JourneyDef(
-    'Concentrarte sin pelearte',
-    'Entrena la atención con bloques cortos.',
-    'bosque',
-    [
-      JourneyStep('Un bloque de foco de 10 minutos', 3, [
-        'No necesitas horas de concentración. Diez minutos al día bastan para empezar a entrenar.',
-        'Ve a Foco, elige 10 minutos y planta tu árbol.',
-      ]),
-      JourneyStep('Móvil en otra habitación durante el foco', 3, [
-        'Tener el móvil a la vista, aunque esté boca abajo, se lleva parte de tu atención.',
-        'Durante tus bloques, déjalo en otra habitación.',
-      ]),
-      JourneyStep('Trocear la tarea que más pereza me da', 3, [
-        'Si una tarea lleva días esperando, casi siempre es porque el primer paso es demasiado grande.',
-        'Ábrela en Tareas y escribe un paso que puedas hacer en dos minutos.',
-      ]),
-      JourneyStep('Repasar el día por la noche', 4, [
-        'Cierra el día mirando lo que sí hiciste. Abre tu bosque o el diario y apunta una cosa que salió bien.',
-      ]),
-    ],
-  ),
-};
-
-// Retos
+// Retos opcionales
 class RetoDef {
   final String name;
   final String desc;
@@ -957,13 +884,20 @@ class RetoDef {
 }
 
 const Map<String, RetoDef> retos = {
-  'paseo': RetoDef('Paseo de 10 minutos', 'Sal a caminar cada día, aunque sea a por el pan.'),
-  'cama': RetoDef('Sin móvil en la cama', 'El móvil duerme fuera del dormitorio.'),
-  'agua': RetoDef('Agua con cada comida', 'Un vaso en el desayuno, la comida y la cena.'),
-  'orden': RetoDef('Ordenar 5 minutos', 'Temporizador de cinco minutos y a recoger una zona.'),
-  'lectura': RetoDef('Leer 10 minutos', 'En papel o libro electrónico, sin redes.'),
-  'gracias': RetoDef('Tres cosas buenas', 'Apunta en el diario tres cosas buenas del día.'),
-  'sol': RetoDef('Luz natural por la mañana', 'Cinco minutos al aire libre antes de las once.'),
+  'paseo': RetoDef('Paseo de 10 minutos',
+      'Sal a caminar cada día, aunque sea a por el pan.'),
+  'cama':
+      RetoDef('Sin móvil en la cama', 'El móvil duerme fuera del dormitorio.'),
+  'agua': RetoDef(
+      'Agua con cada comida', 'Un vaso en el desayuno, la comida y la cena.'),
+  'orden': RetoDef('Ordenar 5 minutos',
+      'Temporizador de cinco minutos y a recoger una zona.'),
+  'lectura':
+      RetoDef('Leer 10 minutos', 'En papel o libro electrónico, sin redes.'),
+  'gracias': RetoDef(
+      'Tres cosas buenas', 'Apunta en el diario tres cosas buenas del día.'),
+  'sol': RetoDef('Luz natural por la mañana',
+      'Cinco minutos al aire libre antes de las once.'),
 };
 
 // Diario
@@ -994,7 +928,8 @@ class ActDef {
 }
 
 const Map<String, ActDef> activities = {
-  'estirar': ActDef('Estiramientos', '5 minutos para soltar el cuerpo', 'actividades', [
+  'estirar': ActDef(
+      'Estiramientos', '5 minutos para soltar el cuerpo', 'actividades', [
     ActStep('Gira el cuello despacio hacia la derecha', 30),
     ActStep('Ahora hacia la izquierda', 30),
     ActStep('Sube los hombros hacia las orejas y suéltalos', 30),
@@ -1018,8 +953,11 @@ const Map<String, ActDef> activities = {
     ActStep('Parpadea despacio diez veces', 15),
     ActStep('Cierra los ojos y respira', 25),
   ]),
-  'siesta': ActDef('Siesta corta', '20 minutos y te despierto con suavidad', 'luna', [
-    ActStep('Túmbate o apoya la cabeza. Cierra los ojos. No hace falta dormirse: descansar ya cuenta.', 1200),
+  'siesta':
+      ActDef('Siesta corta', '20 minutos y te despierto con suavidad', 'luna', [
+    ActStep(
+        'Túmbate o apoya la cabeza. Cierra los ojos. No hace falta dormirse: descansar ya cuenta.',
+        1200),
   ]),
 };
 
@@ -1044,7 +982,8 @@ const Map<String, MedDef> meditations = {
     'Unas respiraciones más…',
     'Poco a poco, vuelve a la habitación.',
   ]),
-  'cuerpo': MedDef('Escaneo corporal', 'Para soltar tensión y bajar al cuerpo.', [
+  'cuerpo':
+      MedDef('Escaneo corporal', 'Para soltar tensión y bajar al cuerpo.', [
     'Ponte cómodo. Respira hondo tres veces.',
     'Lleva la atención a los pies. ¿Qué notas?',
     'Sube por las piernas: rodillas, muslos.',

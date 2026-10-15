@@ -9,11 +9,13 @@ import '../util.dart';
 import '../widgets.dart';
 
 void openRun(BuildContext context, String id) {
-  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => RoutineRunPage(id)));
+  Navigator.of(context)
+      .push(MaterialPageRoute<void>(builder: (_) => RoutineRunPage(id)));
 }
 
 void openRoutineEdit(BuildContext context, String id) {
-  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => RoutineEditPage(id)));
+  Navigator.of(context)
+      .push(MaterialPageRoute<void>(builder: (_) => RoutineEditPage(id)));
 }
 
 class RutinasScreen extends StatelessWidget {
@@ -25,6 +27,7 @@ class RutinasScreen extends StatelessWidget {
       return ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const SectionGuide('Rutinas'),
           for (final r in app.d.routines) _RoutineCard(r),
           Btn('+ Nueva rutina', () {
             final r = app.newRoutine();
@@ -69,7 +72,9 @@ class _RoutineCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(r.name, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                    Text(r.name,
+                        style: const TextStyle(
+                            fontSize: 17, fontWeight: FontWeight.w600)),
                     Muted(info.toString(), small: true),
                   ],
                 ),
@@ -78,13 +83,16 @@ class _RoutineCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ProgressBar(r.steps.isEmpty ? 0.0 : dn.length / r.steps.length, teal: true),
+          ProgressBar(r.steps.isEmpty ? 0.0 : dn.length / r.steps.length,
+              teal: true),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: Btn(
-                  full ? '✓ Completada' : (dn.isNotEmpty ? 'Continuar' : '▶ Empezar'),
+                  full
+                      ? '✓ Completada'
+                      : (dn.isNotEmpty ? 'Continuar' : '▶ Empezar'),
                   () => openRun(context, r.id),
                   kind: 'primary',
                 ),
@@ -142,16 +150,22 @@ class _RoutineRunPageState extends State<RoutineRunPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Muted('Paso ${r.steps.indexOf(cur) + 1} de ${r.steps.length}', small: true),
+              Muted('Paso ${r.steps.indexOf(cur) + 1} de ${r.steps.length}',
+                  small: true),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(cur.t,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, height: 1.25)),
+                    style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        height: 1.25)),
               ),
               if (cur.min > 0) ...[
                 Text(
                   (over ? '+${fmt(-left)}' : fmt(left)) +
-                      (paused ? ' · en pausa' : (over ? ' · sin prisa, termina tranquilo' : '')),
+                      (paused
+                          ? ' · en pausa'
+                          : (over ? ' · sin prisa, termina tranquilo' : '')),
                   style: TextStyle(
                     fontSize: over ? 22 : 36,
                     fontWeight: FontWeight.w700,
@@ -165,7 +179,8 @@ class _RoutineRunPageState extends State<RoutineRunPage> {
               Row(
                 children: [
                   Expanded(
-                    child: Btn('✓ Hecho', () => app.routineMark(r.id, cur.id, true),
+                    child: Btn(
+                        '✓ Hecho', () => app.routineMark(r.id, cur.id, true),
                         kind: 'primary'),
                   ),
                   if (cur.min > 0) ...[
@@ -175,7 +190,8 @@ class _RoutineRunPageState extends State<RoutineRunPage> {
                     Btn(paused ? '▶' : '❚❚', app.runPauseToggle),
                   ],
                   const SizedBox(width: 4),
-                  Btn('Saltar', () => app.routineMark(r.id, cur.id, false), kind: 'ghost'),
+                  Btn('Saltar', () => app.routineMark(r.id, cur.id, false),
+                      kind: 'ghost'),
                 ],
               ),
               if (ms > 0)
@@ -195,7 +211,8 @@ class _RoutineRunPageState extends State<RoutineRunPage> {
               Icon(Icons.star_rounded, size: 72, color: p.gold),
               const Text('¡Rutina completada!',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
-              Muted('Racha: $s ${s == 1 ? 'día' : 'días'} seguidos', small: true,
+              Muted('Racha: $s ${s == 1 ? 'día' : 'días'} seguidos',
+                  small: true,
                   padding: const EdgeInsets.symmetric(vertical: 6)),
               Btn('Reiniciar', () => app.routineReset(r.id), kind: 'ghost'),
             ],
@@ -221,7 +238,8 @@ class _RoutineRunPageState extends State<RoutineRunPage> {
             if (lbl.isNotEmpty)
               SizedBox(
                 width: 46,
-                child: Text(lbl, style: TextStyle(fontSize: 13, color: p.muted)),
+                child:
+                    Text(lbl, style: TextStyle(fontSize: 13, color: p.muted)),
               ),
             Expanded(
               child: Text(
@@ -318,7 +336,10 @@ class RoutineEditPage extends StatelessWidget {
                       ChipOpt('', r.icon == k, () {
                         r.icon = k;
                         app.commit();
-                      }, leading: Icon(iconFor(k), size: 22, color: r.icon == k ? p.accent : p.text)),
+                      },
+                          leading: Icon(iconFor(k),
+                              size: 22,
+                              color: r.icon == k ? p.accent : p.text)),
                   ]),
                   const FieldLabel('Hora de inicio (opcional)'),
                   Row(
@@ -355,7 +376,9 @@ class RoutineEditPage extends StatelessWidget {
                       }),
                   ]),
                   const SizedBox(height: 8),
-                  SwitchRow('Avanzar sola al acabar el tiempo de cada paso', r.auto, (v) {
+                  SwitchRow(
+                      'Avanzar sola al acabar el tiempo de cada paso', r.auto,
+                      (v) {
                     r.auto = v;
                     app.commit();
                   }),
@@ -367,8 +390,8 @@ class RoutineEditPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const H2('Pasos'),
-                  const Muted('Minutos de cada paso (0 = solo marcar)', small: true,
-                      padding: EdgeInsets.only(bottom: 8)),
+                  const Muted('Minutos de cada paso (0 = solo marcar)',
+                      small: true, padding: EdgeInsets.only(bottom: 8)),
                   for (var i = 0; i < r.steps.length; i++) _StepEditor(r, i),
                   const SizedBox(height: 6),
                   _AddStep(r),

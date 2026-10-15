@@ -46,7 +46,9 @@ Widget nextSubRow(BuildContext context, Task t) {
             child: Text.rich(
               TextSpan(
                 children: [
-                  TextSpan(text: 'Siguiente paso: ', style: TextStyle(color: p.muted)),
+                  TextSpan(
+                      text: 'Siguiente paso: ',
+                      style: TextStyle(color: p.muted)),
                   TextSpan(text: step.t),
                 ],
               ),
@@ -110,6 +112,7 @@ class _TareasScreenState extends State<TareasScreen> {
       return ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const SectionGuide('Tareas'),
           AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,15 +143,19 @@ class _TareasScreenState extends State<TareasScreen> {
                 const FieldLabel('Tiempo aproximado'),
                 ChipWrap([
                   for (final m in const [2, 5, 15, 30, 60])
-                    ChipOpt('$m min', _est == m, () => setState(() => _est = m)),
+                    ChipOpt(
+                        '$m min', _est == m, () => setState(() => _est = m)),
                 ]),
               ],
             ),
           ),
           ChipWrap([
-            ChipOpt('Pendientes', f == 'pend', () => setState(() => _filter = 'pend')),
-            ChipOpt('★ Prioridad', f == 'star', () => setState(() => _filter = 'star')),
-            ChipOpt('Hechas', f == 'done', () => setState(() => _filter = 'done')),
+            ChipOpt('Pendientes', f == 'pend',
+                () => setState(() => _filter = 'pend')),
+            ChipOpt('★ Prioridad', f == 'star',
+                () => setState(() => _filter = 'star')),
+            ChipOpt(
+                'Hechas', f == 'done', () => setState(() => _filter = 'done')),
           ]),
           const SizedBox(height: 12),
           AppCard(
@@ -200,7 +207,8 @@ class _TaskRow extends StatelessWidget {
       opacity: t.done ? 0.65 : 1,
       child: Row(
         children: [
-          CheckCircle(t.done, () => t.done ? app.undoTask(t.id) : app.completeTask(t.id)),
+          CheckCircle(t.done,
+              () => t.done ? app.undoTask(t.id) : app.completeTask(t.id)),
           Expanded(
             child: InkWell(
               onTap: () => showTaskSheet(context, t.id),
@@ -244,111 +252,119 @@ class _TaskRow extends StatelessWidget {
 // =====================================================================
 
 void showTaskSheet(BuildContext context, String id) {
-  showSheet<void>(context, (sc) => Live((c) {
-        final t = app.getTask(id);
-        if (t == null) return const SizedBox.shrink();
-        final p = c.pal;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+  showSheet<void>(
+      context,
+      (sc) => Live((c) {
+            final t = app.getTask(id);
+            if (t == null) return const SizedBox.shrink();
+            final p = c.pal;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Expanded(
-                  child: Text('Editar tarea',
-                      style: TextStyle(fontSize: 19, fontWeight: FontWeight.w600)),
-                ),
-                Btn('Cerrar', () => Navigator.of(sc).pop(), kind: 'ghost', small: true),
-              ],
-            ),
-            const FieldLabel('Título'),
-            SaveField(
-              initial: t.title,
-              onSave: (v) {
-                if (v.trim().isNotEmpty) {
-                  t.title = v.trim();
-                  app.commit();
-                }
-              },
-            ),
-            const FieldLabel('Energía que pide'),
-            ChipWrap([
-              for (final e in energyKeys)
-                ChipOpt(energyName[e]!, t.energy == e, () {
-                  t.energy = e;
-                  app.commit();
-                }),
-            ]),
-            const FieldLabel('Tiempo estimado'),
-            ChipWrap([
-              for (final m in const [2, 5, 10, 15, 25, 45, 60, 90])
-                ChipOpt('$m′', t.est == m, () {
-                  t.est = m;
-                  app.commit();
-                }),
-            ]),
-            const FieldLabel('Pasos pequeños'),
-            for (final s in t.subs)
-              Row(
-                children: [
-                  CheckCircle(s.done, () => app.toggleSub(t.id, s.id), small: true),
-                  Expanded(
-                    child: Text(
-                      s.t,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: s.done ? p.muted : p.text,
-                        decoration: s.done ? TextDecoration.lineThrough : null,
-                      ),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text('Editar tarea',
+                          style: TextStyle(
+                              fontSize: 19, fontWeight: FontWeight.w600)),
                     ),
-                  ),
-                  IconButton(
-                    tooltip: 'Borrar paso',
-                    onPressed: () {
-                      t.subs.removeWhere((x) => x.id == s.id);
+                    Btn('Cerrar', () => Navigator.of(sc).pop(),
+                        kind: 'ghost', small: true),
+                  ],
+                ),
+                const FieldLabel('Título'),
+                SaveField(
+                  initial: t.title,
+                  onSave: (v) {
+                    if (v.trim().isNotEmpty) {
+                      t.title = v.trim();
                       app.commit();
-                    },
-                    icon: Icon(Icons.close, color: p.muted),
+                    }
+                  },
+                ),
+                const FieldLabel('Energía que pide'),
+                ChipWrap([
+                  for (final e in energyKeys)
+                    ChipOpt(energyName[e]!, t.energy == e, () {
+                      t.energy = e;
+                      app.commit();
+                    }),
+                ]),
+                const FieldLabel('Tiempo estimado'),
+                ChipWrap([
+                  for (final m in const [2, 5, 10, 15, 25, 45, 60, 90])
+                    ChipOpt('$m′', t.est == m, () {
+                      t.est = m;
+                      app.commit();
+                    }),
+                ]),
+                const FieldLabel('Pasos pequeños'),
+                for (final s in t.subs)
+                  Row(
+                    children: [
+                      CheckCircle(s.done, () => app.toggleSub(t.id, s.id),
+                          small: true),
+                      Expanded(
+                        child: Text(
+                          s.t,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: s.done ? p.muted : p.text,
+                            decoration:
+                                s.done ? TextDecoration.lineThrough : null,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Borrar paso',
+                        onPressed: () {
+                          t.subs.removeWhere((x) => x.id == s.id);
+                          app.commit();
+                        },
+                        icon: Icon(Icons.close, color: p.muted),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            const SizedBox(height: 6),
-            QuickAdd(
-              hint: '¿Cuál es el paso más pequeño posible?',
-              button: '+',
-              onSubmit: (v) {
-                t.subs.add(SubTask(t: v));
-                app.commit();
-              },
-            ),
-            if (t.spent > 0)
-              Muted(
-                'Llevas ${t.spent} min de foco en esta tarea${t.est > 0 ? ' (estimaste ${t.est})' : ''}.',
-                small: true,
-                padding: const EdgeInsets.only(top: 10),
-              ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                if (!t.done)
-                  Expanded(
-                    child: Btn('▶ Empezar foco', () {
-                      final min = t.est > 0 ? math.min(t.est, app.d.settings.focus) : app.d.settings.focus;
-                      app.startTimer(t.id, min, false);
-                      Navigator.of(sc).popUntil((r) => r.isFirst);
-                    }, kind: 'primary'),
+                const SizedBox(height: 6),
+                QuickAdd(
+                  hint: '¿Cuál es el paso más pequeño posible?',
+                  button: '+',
+                  onSubmit: (v) {
+                    t.subs.add(SubTask(t: v));
+                    app.commit();
+                  },
+                ),
+                if (t.spent > 0)
+                  Muted(
+                    'Llevas ${t.spent} min de foco en esta tarea${t.est > 0 ? ' (estimaste ${t.est})' : ''}.',
+                    small: true,
+                    padding: const EdgeInsets.only(top: 10),
                   ),
-                if (!t.done) const SizedBox(width: 8),
-                Btn('Borrar', () {
-                  askConfirm(sc, '¿Borrar esta tarea?', () {
-                    app.deleteTask(t.id);
-                    Navigator.of(sc).pop();
-                  });
-                }),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    if (!t.done)
+                      Expanded(
+                        child: Btn('▶ Empezar foco', () {
+                          final min = t.est > 0
+                              ? math.min(t.est, app.d.settings.focus)
+                              : app.d.settings.focus;
+                          app.startTimer(t.id, min, false);
+                          Navigator.of(sc).popUntil((r) => r.isFirst);
+                        }, kind: 'primary'),
+                      ),
+                    if (!t.done) const SizedBox(width: 8),
+                    Btn('Borrar', () {
+                      askConfirm(sc, '¿Borrar esta tarea?', () {
+                        app.deleteTask(t.id);
+                        Navigator.of(sc).pop();
+                      });
+                    }),
+                  ],
+                ),
               ],
-            ),
-          ],
-        );
-      }));
+            );
+          }));
 }
 
 // =====================================================================
@@ -439,7 +455,9 @@ class _PickSheetState extends State<_PickSheet> {
             Btn('▶ ¡Vamos!', () {
               final t = app.getTask(_picked);
               if (t == null) return;
-              final min = t.est > 0 ? math.min(t.est, app.d.settings.focus) : app.d.settings.focus;
+              final min = t.est > 0
+                  ? math.min(t.est, app.d.settings.focus)
+                  : app.d.settings.focus;
               app.startTimer(t.id, min, false);
               Navigator.of(context).popUntil((r) => r.isFirst);
             }, kind: 'primary'),
